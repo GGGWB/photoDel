@@ -141,22 +141,20 @@ struct Index {
         .width('100%')
         .justifyContent(FlexAlign.Start)
 
-        // 右侧设置菜单 (汉堡图标)
+        // 右侧设置菜单
         Row() {
-          Column({ space: 6 }) { // 间距 6
-            // 三条横线
-            Rect().width(24).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1)
-            Rect().width(16).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1).alignSelf(ItemAlign.End) // 第二条短一点，设计感
-            Rect().width(24).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1)
-          }
-          .width(44)
-          .height(44)
-          .justifyContent(FlexAlign.Center)
-          .onClick((): void => {
-             // 暂时无动作，或者显示设置
-             this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
-          })
+          Image($r('sys.media.ohos_ic_public_more'))
+            .width(24)
+            .height(24)
+            .fillColor(AppColors.ACCENT_PRIMARY)
         }
+        .width(44)
+        .height(44)
+        .justifyContent(FlexAlign.Center)
+        .onClick((): void => {
+           // 显示设置
+           this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
+        })
         .width('100%')
         .justifyContent(FlexAlign.End)
 
@@ -168,7 +166,7 @@ struct Index {
           // Removed shadow as requested ("不要外边框")
       }
       .width('100%')
-      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
+      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD })
       // Removed background color and blur as requested
 
       // 主内容区
@@ -303,5 +301,6 @@ struct Index {
         [AppColors.BG_TERTIARY, 1.0]
       ]
     })
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM]) // 全屏沉浸式
   }
 }

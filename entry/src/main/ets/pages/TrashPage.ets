@@ -54,7 +54,7 @@ struct TrashPage {
           .fontWeight(FontWeight.Bold)
       }
       .width('100%')
-      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
+      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD }) // 调整顶部距离
       // Removed background color as requested
 
       // 内容区
@@ -123,5 +123,6 @@ struct TrashPage {
         [AppColors.BG_TERTIARY, 1.0]
       ]
     })
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM]) // 沉浸式：延伸至状态栏和底部
   }
 }

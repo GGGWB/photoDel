@@ -84,7 +84,7 @@ export struct StatsBar {
       .padding({ left: AppSpacing.SM, right: AppSpacing.MD, top: AppSpacing.SM, bottom: AppSpacing.SM })
     }
     .width('94%') // 浮动效果，不占满全宽
-    .margin({ bottom: AppSpacing.MD })
+    .margin({ bottom: 10 }) // 调整底部距离
     .backgroundColor(AppColors.GLASS_BG) // 玻璃背景
     .backgroundBlurStyle(BlurStyle.Thin) // 毛玻璃模糊
     .borderRadius(AppRadius.XXL) // 大圆角
