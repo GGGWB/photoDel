@@ -15,6 +15,8 @@ export struct PhotoCard {
         .borderRadius(AppRadius.LG)
         // 强制同步加载，防止重新渲染时出现白屏闪烁
         .syncLoad(true)
+        // 共享元素转场
+        .geometryTransition(this.assetUri)
     }
     .width('100%')
     .height('100%')

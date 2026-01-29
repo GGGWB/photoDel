@@ -23,6 +23,10 @@ struct Index {
   @State totalKept: number = 0;
   @State totalDeleted: number = 0;
 
+  // 全屏预览状态
+  @State isFullScreen: boolean = false;
+  private lastClickTime: number = 0;
+
   private photoService: PhotoService | null = null;
   private statsService: StatsService | null = null;
 
@@ -125,179 +129,223 @@ struct Index {
     }
   }
 
+  getImageFit(index: number): ImageFit {
+    try {
+      if (index >= this.photos.length) return ImageFit.Contain;
+      const w = this.photos[index].get(photoAccessHelper.PhotoKeys.WIDTH) as number || 0;
+      const h = this.photos[index].get(photoAccessHelper.PhotoKeys.HEIGHT) as number || 0;
+      // 简单的判断：如果高度 > 宽度，视为竖屏图，使用 Cover 填充
+      // 否则（横屏或正方形），使用 Contain 完整显示
+      return h > w ? ImageFit.Cover : ImageFit.Contain;
+    } catch (err) {
+      console.warn(`getImageFit error: ${JSON.stringify(err)}`);
+      return ImageFit.Contain;
+    }
+  }
+
   build() {
-    Column() {
-      // 顶部导航栏
-      // 顶部导航栏
-      Stack({ alignContent: Alignment.Center }) {
-        // 左侧进度 (绝对定位或在Row中)
-        Row() {
-          Stack() {
-            Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
-              .width(44)
-              .height(44)
-              .style({ strokeWidth: 4 })
-              .color(AppColors.ACCENT_PRIMARY)
-              .backgroundColor(AppColors.BG_TERTIARY)
+    Stack() {
+      // 底层内容
+      Column() {
+        // 顶部导航栏
+        Stack({ alignContent: Alignment.Center }) {
+          // 左侧进度
+          Row() {
+            Stack() {
+              Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
+                .width(44)
+                .height(44)
+                .style({ strokeWidth: 4 })
+                .color(AppColors.ACCENT_PRIMARY)
+                .backgroundColor(AppColors.BG_TERTIARY)
 
-            Text(`${this.currentIndex}`)
-              .fontSize(14)
-              .fontColor(AppColors.TEXT_PRIMARY)
-              .fontWeight(FontWeight.Bold)
+              Text(`${this.currentIndex}`)
+                .fontSize(14)
+                .fontColor(AppColors.TEXT_PRIMARY)
+                .fontWeight(FontWeight.Bold)
+            }
           }
+          .width('100%')
+          .justifyContent(FlexAlign.Start)
+
+          // 右侧设置菜单
+          Row() {
+            Image($r('sys.media.ohos_ic_public_more'))
+              .width(24)
+              .height(24)
+              .fillColor(AppColors.ACCENT_PRIMARY)
+          }
+          .width(44)
+          .height(44)
+          .justifyContent(FlexAlign.Center)
+          .onClick((): void => {
+             this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
+          })
+          .width('100%')
+          .justifyContent(FlexAlign.End)
+
+          // 中间标题
+          Text('去留之间')
+            .fontSize(AppFontSizes.SUBTITLE)
+            .fontColor(AppColors.ACCENT_INFO)
+            .fontWeight(FontWeight.Bold)
         }
         .width('100%')
-        .justifyContent(FlexAlign.Start)
+        .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD })
 
-        // 右侧设置菜单
-        Row() {
-          Image($r('sys.media.ohos_ic_public_more'))
-            .width(24)
-            .height(24)
-            .fillColor(AppColors.ACCENT_PRIMARY)
-        }
-        .width(44)
-        .height(44)
-        .justifyContent(FlexAlign.Center)
-        .onClick((): void => {
-           // 显示设置
-           this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
-        })
-        .width('100%')
-        .justifyContent(FlexAlign.End)
-
-        // 中间标题
-        Text('去留之间')
-          .fontSize(AppFontSizes.SUBTITLE)
-          .fontColor(AppColors.ACCENT_INFO)
-          .fontWeight(FontWeight.Bold)
-          // Removed shadow as requested ("不要外边框")
-      }
-      .width('100%')
-      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD })
-      // Removed background color and blur as requested
-
-      // 主内容区
-      Stack() {
-        if (this.isLoading) {
-          Column() {
-            LoadingProgress()
-              .width(60)
-              .height(60)
-              .color(AppColors.ACCENT_PRIMARY)
-            Text('加载中...')
-              .fontSize(AppFontSizes.BODY)
-              .fontColor(AppColors.TEXT_SECONDARY)
-              .margin({ top: AppSpacing.MD })
-          }
-        } else if (this.photos.length === 0) {
-          Column() {
-            Text('📷')
-              .fontSize(80)
-            Text('暂无照片')
-              .fontSize(AppFontSizes.TITLE)
-              .fontColor(AppColors.TEXT_PRIMARY)
-              .fontWeight(FontWeight.Bold)
-              .margin({ top: AppSpacing.MD })
-            Text('请授予相册访问权限')
-              .fontSize(AppFontSizes.BODY)
-              .fontColor(AppColors.TEXT_SECONDARY)
-              .margin({ top: AppSpacing.SM })
-
-            Button('重新加载')
-              .height(48)
-              .width(160)
-              .borderRadius(AppRadius.LG)
-              .backgroundColor(AppColors.ACCENT_PRIMARY)
-              .margin({ top: AppSpacing.XL })
-              .onClick((): void => {
-                this.loadPhotos();
-              })
-          }
-        } else if (this.currentIndex >= this.photos.length) {
-          // 完成状态
-          // 完成状态 (Neon & Glass)
-          Column() {
-            // 霓虹奖杯
-            Text('🏆')
-              .fontSize(100)
-              // Removed shadow ("不要外边框")
-            
-            Text('All Clean!')
-              .fontSize(36)
-              .fontColor(AppColors.TEXT_PRIMARY)
-              .fontWeight(FontWeight.Bolder)
-              .margin({ top: AppSpacing.LG })
-              // Removed shadow ("不要外边框")
-
-            Row() {
-              Text(`本次清除 ${this.removedCount} 张照片`)
+        // 主内容区
+        Stack() {
+          if (this.isLoading) {
+            Column() {
+              LoadingProgress()
+                .width(60)
+                .height(60)
+                .color(AppColors.ACCENT_PRIMARY)
+              Text('加载中...')
                 .fontSize(AppFontSizes.BODY)
                 .fontColor(AppColors.TEXT_SECONDARY)
+                .margin({ top: AppSpacing.MD })
             }
-            .margin({ top: AppSpacing.MD })
-            .padding({ left: 16, right: 16, top: 8, bottom: 8 })
-            .backgroundColor(AppColors.GLASS_BG)
-            .borderRadius(AppRadius.FULL)
-
-            // 按钮组
-            Row({ space: AppSpacing.LG }) {
-              // 再来20张
-              Button('再来20张')
-                .height(48)
-                .padding({ left: 24, right: 24 })
-                .borderRadius(AppRadius.FULL)
-                .backgroundColor(AppColors.GLASS_BG)
-                .backgroundBlurStyle(BlurStyle.Regular)
-                .border({ width: 1, color: AppColors.ACCENT_PRIMARY })
-                .fontSize(16)
-                .fontColor(AppColors.ACCENT_PRIMARY)
+          } else if (this.photos.length === 0) {
+            Column() {
+              Text('📷')
+                .fontSize(80)
+              Text('暂无照片')
+                .fontSize(AppFontSizes.TITLE)
+                .fontColor(AppColors.TEXT_PRIMARY)
                 .fontWeight(FontWeight.Bold)
+                .margin({ top: AppSpacing.MD })
+              Text('请授予相册访问权限')
+                .fontSize(AppFontSizes.BODY)
+                .fontColor(AppColors.TEXT_SECONDARY)
+                .margin({ top: AppSpacing.SM })
+
+              Button('重新加载')
+                .height(48)
+                .width(160)
+                .borderRadius(AppRadius.LG)
+                .backgroundColor(AppColors.ACCENT_PRIMARY)
+                .margin({ top: AppSpacing.XL })
                 .onClick((): void => {
                   this.loadPhotos();
                 })
-
-              // 退出
-              Button('退出')
-                .height(48)
-                .padding({ left: 24, right: 24 })
-                .borderRadius(AppRadius.FULL)
-                .backgroundColor(AppColors.GLASS_BG)
-                .backgroundBlurStyle(BlurStyle.Regular)
-                .border({ width: 1, color: AppColors.ACCENT_DELETE })
-                .fontSize(16)
-                .fontColor(AppColors.ACCENT_DELETE)
-                .fontWeight(FontWeight.Bold)
-                .onClick((): void => {
-                  const context = getContext(this) as common.UIAbilityContext;
-                  context.terminateSelf();
-                })
             }
-            .margin({ top: AppSpacing.XXL })
-          }
-        } else {
-          // 卡片堆叠
-          CardStack({
-            photos: $photos,
-            currentIndex: $currentIndex,
-            removedCount: $removedCount,
-            onSwipeDown: (a: photoAccessHelper.PhotoAsset): void => { this.handleDelete(); },
-            onSwipeUp: (a: photoAccessHelper.PhotoAsset): void => { this.handleKeep(); },
-            onSwipeLeft: (a: photoAccessHelper.PhotoAsset): void => { this.handleInfo(); }
-          })
-        }
-      }
-      .layoutWeight(1)
-      .width('100%')
-      .alignContent(Alignment.Center)
+          } else if (this.currentIndex >= this.photos.length) {
+            // 完成状态
+            Column() {
+              Text('🏆')
+                .fontSize(100)
+              
+              Text('All Clean!')
+                .fontSize(36)
+                .fontColor(AppColors.TEXT_PRIMARY)
+                .fontWeight(FontWeight.Bolder)
+                .margin({ top: AppSpacing.LG })
 
-      // 底部统计栏
-      StatsBar({
-        albumTotal: this.albumTotal,
-        totalProcessed: this.totalProcessed,
-        totalKept: this.totalKept,
-        totalDeleted: this.totalDeleted
-      })
+              Row() {
+                Text(`本次清除 ${this.removedCount} 张照片`)
+                  .fontSize(AppFontSizes.BODY)
+                  .fontColor(AppColors.TEXT_SECONDARY)
+              }
+              .margin({ top: AppSpacing.MD })
+              .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+              .backgroundColor(AppColors.GLASS_BG)
+              .borderRadius(AppRadius.FULL)
+
+              // 按钮组
+              Row({ space: AppSpacing.LG }) {
+                Button('再来20张')
+                  .layoutWeight(1)
+                  .height(48)
+                  .borderRadius(AppRadius.FULL)
+                  .backgroundColor(AppColors.GLASS_BG)
+                  .backgroundBlurStyle(BlurStyle.Regular)
+                  .border({ width: 1, color: AppColors.ACCENT_PRIMARY })
+                  .fontSize(16)
+                  .fontColor(AppColors.ACCENT_PRIMARY)
+                  .fontWeight(FontWeight.Bold)
+                  .onClick((): void => {
+                    this.loadPhotos();
+                  })
+
+                Button('退出')
+                  .layoutWeight(1)
+                  .height(48)
+                  .borderRadius(AppRadius.FULL)
+                  .backgroundColor(AppColors.GLASS_BG)
+                  .backgroundBlurStyle(BlurStyle.Regular)
+                  .border({ width: 1, color: AppColors.ACCENT_DELETE })
+                  .fontSize(16)
+                  .fontColor(AppColors.ACCENT_DELETE)
+                  .fontWeight(FontWeight.Bold)
+                  .onClick((): void => {
+                    const context = getContext(this) as common.UIAbilityContext;
+                    context.terminateSelf();
+                  })
+              }
+              .width('80%')
+              .justifyContent(FlexAlign.Center)
+              .margin({ top: AppSpacing.XXL })
+            }
+          } else {
+            // 卡片堆叠
+            CardStack({
+              photos: $photos,
+              currentIndex: $currentIndex,
+              removedCount: $removedCount,
+              onSwipeDown: (a: photoAccessHelper.PhotoAsset): void => { this.handleDelete(); },
+              onSwipeUp: (a: photoAccessHelper.PhotoAsset): void => { this.handleKeep(); },
+              onSwipeLeft: (a: photoAccessHelper.PhotoAsset): void => { this.handleInfo(); },
+              onCardClick: (): void => { 
+                this.lastClickTime = Date.now(); // 记录开启时间
+                this.getUIContext().animateTo({ duration: 300, curve: Curve.EaseInOut }, () => {
+                  this.isFullScreen = true; 
+                });
+              } 
+            })
+          }
+        }
+        .layoutWeight(1)
+        .width('100%')
+        .alignContent(Alignment.Center)
+
+        // 底部统计栏
+        StatsBar({
+          albumTotal: this.albumTotal,
+          totalProcessed: this.totalProcessed,
+          totalKept: this.totalKept,
+          totalDeleted: this.totalDeleted
+        })
+      }
+      .height('100%')
+      .width('100%')
+
+
+      // 全屏预览层 (Overlay)
+      if (this.isFullScreen && this.currentIndex < this.photos.length) {
+        Stack() {
+          Image(this.photos[this.currentIndex].uri)
+            .width('100%')
+            .height('100%')
+            .objectFit(this.getImageFit(this.currentIndex))
+            .geometryTransition(this.photos[this.currentIndex].uri) // Shared Element ID
+            .transition(TransitionEffect.opacity(1)) // Keep image opaque during transition
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor(Color.Black) // Background for full screen
+        .onClick(() => {
+          // 防误触：如果距离开启时间太短（500ms），则忽略点击
+          if (Date.now() - this.lastClickTime < 500) return;
+
+          this.getUIContext().animateTo({ duration: 300, curve: Curve.EaseInOut }, () => {
+            this.isFullScreen = false;
+          });
+        })
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM]) // Make sure it covers everything
+        .transition(TransitionEffect.OPACITY) // Fade in the black background
+        .zIndex(999)
+      }
     }
     .height('100%')
     .width('100%')
@@ -309,6 +357,6 @@ struct Index {
         [AppColors.BG_TERTIARY, 1.0]
       ]
     })
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM]) // 全屏沉浸式
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 }

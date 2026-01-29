@@ -12,6 +12,7 @@ export struct CardStack {
   onSwipeLeft: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeUp: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeDown: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
+  onCardClick: () => void = (): void => {};
 
   // 手势状态
   @State offsetX: number = 0;
@@ -81,6 +82,11 @@ export struct CardStack {
               }
             })
         )
+        .onClick(() => {
+          if (index === 0) {
+            this.onCardClick();
+          }
+        })
       }, (item: photoAccessHelper.PhotoAsset) => item.uri) // 关键：使用 uri 作为唯一键值，确保复用
 
       if (this.currentIndex >= this.photos.length) {
@@ -96,8 +102,8 @@ export struct CardStack {
         }
       }
     }
-    .width('92%')
-    .height('70%')
+    .width('90%') // 缩小宽度
+    .height('86%') // 增加高度
   }
 
   flyOut(direction: string, callback: () => void): void {

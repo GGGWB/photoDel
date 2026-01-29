@@ -21,7 +21,9 @@ export class PhotoService {
                 fetchColumns: [
                     photoAccessHelper.PhotoKeys.DISPLAY_NAME,
                     photoAccessHelper.PhotoKeys.DATE_ADDED,
-                    photoAccessHelper.PhotoKeys.URI
+                    photoAccessHelper.PhotoKeys.URI,
+                    photoAccessHelper.PhotoKeys.WIDTH,
+                    photoAccessHelper.PhotoKeys.HEIGHT
                 ],
                 predicates: predicates
             };
