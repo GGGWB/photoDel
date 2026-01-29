@@ -2,6 +2,7 @@ import { PhotoService } from '../services/PhotoService';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
 import { router } from '@kit.ArkUI';
+import { AppColors, AppFontSizes, AppSpacing, AppRadius } from '../common/Theme';
 
 @Entry
 @Component
@@ -26,64 +27,112 @@ struct TrashPage {
 
   build() {
     Column() {
-      // Header
+      // 顶部导航栏
       Row() {
-        Button("返回")
-          .onClick((): void => {
-            router.back();
-          })
+        // 返回按钮
+        Column() {
+          Text('←')
+            .fontSize(24)
+            .fontColor(AppColors.TEXT_PRIMARY)
+        }
+        .width(44)
+        .height(44)
+        .borderRadius(AppRadius.MD)
+        .backgroundColor(AppColors.BG_TERTIARY)
+        .justifyContent(FlexAlign.Center)
+        .onClick((): void => {
+          router.back();
+        })
+
         Text("回收站")
-          .fontSize(20)
+          .fontSize(AppFontSizes.SUBTITLE)
+          .fontColor(AppColors.TEXT_PRIMARY)
           .fontWeight(FontWeight.Bold)
-          .margin({ left: 20 })
+          .margin({ left: AppSpacing.MD })
+
+        Blank()
+
+        Text(`${this.trashPhotos.length} 张`)
+          .fontSize(AppFontSizes.CAPTION)
+          .fontColor(AppColors.TEXT_SECONDARY)
       }
       .width('100%')
-      .padding(10)
-      .height(50)
+      .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
+      .backgroundColor(AppColors.BG_SECONDARY)
 
+      // 内容区
       if (this.isLoading) {
-        LoadingProgress()
-          .layoutWeight(1)
+        Column() {
+          LoadingProgress()
+            .width(60)
+            .height(60)
+            .color(AppColors.ACCENT_PRIMARY)
+        }
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .width('100%')
       } else if (this.trashPhotos.length === 0) {
         Column() {
-          Text("回收站为空")
-            .fontSize(16)
-            .fontColor(Color.Grey)
-            .margin({ top: 20 })
-          Text("已删除的照片请在系统相册中查看")
-            .fontSize(14)
-            .fontColor(Color.Grey)
-            .margin({ top: 10 })
+          Text('🗑️')
+            .fontSize(80)
+            .opacity(0.5)
+          Text('回收站为空')
+            .fontSize(AppFontSizes.TITLE)
+            .fontColor(AppColors.TEXT_PRIMARY)
+            .fontWeight(FontWeight.Bold)
+            .margin({ top: AppSpacing.MD })
+          Text('已删除的照片在系统相册中')
+            .fontSize(AppFontSizes.BODY)
+            .fontColor(AppColors.TEXT_SECONDARY)
+            .margin({ top: AppSpacing.SM })
         }
-        .width('100%')
         .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .width('100%')
       } else {
         Grid() {
           ForEach(this.trashPhotos, (asset: photoAccessHelper.PhotoAsset) => {
             GridItem() {
-              Image(asset.uri)
-                .objectFit(ImageFit.Cover)
-                .width('100%')
-                .aspectRatio(1)
-                .borderRadius(8)
-                .onClick((): void => {
-                  this.getUIContext().showAlertDialog({
-                    title: '提示',
-                    message: '请在系统相册中恢复照片',
-                    confirm: { value: '知道了', action: (): void => {} }
-                  });
-                })
+              Stack() {
+                Image(asset.uri)
+                  .objectFit(ImageFit.Cover)
+                  .width('100%')
+                  .height('100%')
+                  .borderRadius(AppRadius.SM)
+
+                // 恢复图标
+                Column() {
+                  Text('↩️')
+                    .fontSize(20)
+                }
+                .width(36)
+                .height(36)
+                .borderRadius(AppRadius.FULL)
+                .backgroundColor(AppColors.OVERLAY_DARK)
+                .justifyContent(FlexAlign.Center)
+                .position({ x: 8, y: 8 })
+              }
+              .width('100%')
+              .aspectRatio(1)
+              .onClick((): void => {
+                this.getUIContext().showAlertDialog({
+                  title: '恢复照片',
+                  message: '请在系统相册中恢复已删除的照片',
+                  confirm: { value: '知道了', action: (): void => {} }
+                });
+              })
             }
           })
         }
         .columnsTemplate('1fr 1fr 1fr')
-        .columnsGap(5)
-        .rowsGap(5)
-        .padding(10)
+        .columnsGap(AppSpacing.SM)
+        .rowsGap(AppSpacing.SM)
+        .padding(AppSpacing.MD)
         .layoutWeight(1)
       }
     }
     .width('100%')
     .height('100%')
+    .backgroundColor(AppColors.BG_PRIMARY)
   }
 }

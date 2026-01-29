@@ -1,5 +1,6 @@
 import { PhotoCard } from './PhotoCard';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { AppColors, AppRadius, AppAnimation } from '../common/Theme';
 
 @Component
 export struct CardStack {
@@ -7,7 +8,7 @@ export struct CardStack {
   @Link currentIndex: number;
   @Link removedCount: number;
 
-  // Callbacks with explicit types
+  // Callbacks
   onSwipeLeft: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeRight: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeUp: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
@@ -17,80 +18,123 @@ export struct CardStack {
   @State offsetX: number = 0;
   @State offsetY: number = 0;
   @State rotateAngle: number = 0;
+  @State cardScale: number = 1;
 
-  private readonly THRESHOLD: number = 100;
+  private readonly THRESHOLD: number = 120;
 
   build() {
     Stack() {
-      // Render only the top 2 cards for performance
-      // The one below (next)
-      if (this.currentIndex + 1 < this.photos.length) {
+      // 第三张卡片 (背景)
+      if (this.currentIndex + 2 < this.photos.length) {
         PhotoCard({
-          assetUri: this.photos[this.currentIndex + 1].uri,
-          isActive: false
+          assetUri: this.photos[this.currentIndex + 2].uri,
+          isActive: false,
+          offsetX: 0,
+          offsetY: 0
         })
-          .scale({ x: 0.9, y: 0.9 })
-          .opacity(0.8)
+          .scale({ x: 0.85, y: 0.85 })
+          .opacity(0.5)
           .zIndex(0)
       }
 
-      // The top one (current)
+      // 第二张卡片 (次层)
+      if (this.currentIndex + 1 < this.photos.length) {
+        PhotoCard({
+          assetUri: this.photos[this.currentIndex + 1].uri,
+          isActive: false,
+          offsetX: 0,
+          offsetY: 0
+        })
+          .scale({ x: 0.92, y: 0.92 })
+          .opacity(0.7)
+          .zIndex(1)
+      }
+
+      // 顶层卡片 (当前操作)
       if (this.currentIndex < this.photos.length) {
         PhotoCard({
           assetUri: this.photos[this.currentIndex].uri,
-          isActive: true
+          isActive: true,
+          offsetX: this.offsetX,
+          offsetY: this.offsetY
         })
-          .zIndex(1)
+          .zIndex(2)
           .translate({ x: this.offsetX, y: this.offsetY })
           .rotate({ angle: this.rotateAngle })
+          .scale({ x: this.cardScale, y: this.cardScale })
           .gesture(
             PanGesture()
+              .onActionStart((): void => {
+                this.cardScale = 1.02;
+              })
               .onActionUpdate((event?: GestureEvent): void => {
                 if (event) {
                   this.offsetX = event.offsetX;
                   this.offsetY = event.offsetY;
-                  this.rotateAngle = event.offsetX / 20;
+                  this.rotateAngle = event.offsetX / 25;
                 }
               })
               .onActionEnd((): void => {
-                // Determine action based on offset
+                this.cardScale = 1;
                 if (this.offsetY > this.THRESHOLD) {
-                  // Down: Delete
+                  this.flyOut('down');
                   this.onSwipeDown(this.photos[this.currentIndex]);
-                  this.resetPosition();
                 } else if (this.offsetY < -this.THRESHOLD) {
-                  // Up: Keep
+                  this.flyOut('up');
                   this.onSwipeUp(this.photos[this.currentIndex]);
-                  this.resetPosition();
                 } else if (this.offsetX < -this.THRESHOLD) {
-                  // Left: Info
                   this.onSwipeLeft(this.photos[this.currentIndex]);
                   this.animateReset();
                 } else {
-                  // Reset (Snap back)
                   this.animateReset();
                 }
               })
           )
       } else {
-        // Empty State (Batch finished)
-        Text("已完成")
-          .fontSize(30)
-          .fontColor(Color.Gray)
+        // 空状态
+        Column() {
+          Text('🎉')
+            .fontSize(80)
+          Text('整理完成')
+            .fontSize(28)
+            .fontColor(AppColors.TEXT_PRIMARY)
+            .fontWeight(FontWeight.Bold)
+            .margin({ top: 16 })
+          Text(`本次删除 ${this.removedCount} 张`)
+            .fontSize(16)
+            .fontColor(AppColors.TEXT_SECONDARY)
+            .margin({ top: 8 })
+        }
+        .justifyContent(FlexAlign.Center)
       }
     }
-    .width('90%')
-    .height('70%')
+    .width('92%')
+    .height('75%')
   }
 
-  resetPosition(): void {
-    this.offsetX = 0;
-    this.offsetY = 0;
-    this.rotateAngle = 0;
+  flyOut(direction: string): void {
+    let targetY = direction === 'down' ? 800 : -800;
+    this.getUIContext().animateTo({
+      duration: AppAnimation.NORMAL,
+      curve: Curve.EaseOut
+    }, (): void => {
+      this.offsetY = targetY;
+      this.offsetX = this.offsetX * 2;
+    });
+
+    // 延迟重置
+    setTimeout((): void => {
+      this.offsetX = 0;
+      this.offsetY = 0;
+      this.rotateAngle = 0;
+    }, AppAnimation.NORMAL);
   }
 
   animateReset(): void {
-    this.getUIContext().animateTo({ duration: 300 }, (): void => {
+    this.getUIContext().animateTo({
+      duration: AppAnimation.NORMAL,
+      curve: Curve.Spring
+    }, (): void => {
       this.offsetX = 0;
       this.offsetY = 0;
       this.rotateAngle = 0;
