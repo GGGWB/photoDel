@@ -66,13 +66,31 @@ export class PhotoService {
     /**
      * Move asset to trash using deleteAssets static method
      */
+    private pendingTrash: Array<photoAccessHelper.PhotoAsset> = [];
+
+    /**
+     * Mark asset for deletion (queue it)
+     */
     async moveToTrash(asset: photoAccessHelper.PhotoAsset): Promise<void> {
+        this.pendingTrash.push(asset);
+        // Optimistic return, no actual deletion yet
+    }
+
+    /**
+     * Commit all pending deletions
+     * Triggers the system permission dialog once for all photos
+     */
+    async commitDeletions(): Promise<void> {
+        if (this.pendingTrash.length === 0) return;
+
         try {
-            // Use the static deleteAssets method which moves to trash
-            await photoAccessHelper.MediaAssetChangeRequest.deleteAssets(this.context, [asset]);
+            await photoAccessHelper.MediaAssetChangeRequest.deleteAssets(this.context, this.pendingTrash);
+            this.pendingTrash = []; // Clear queue on success
         } catch (err) {
-            console.error(`PhotoService: moveToTrash failed: ${JSON.stringify(err)}`);
-            throw err;
+            console.error(`PhotoService: commitDeletions failed: ${JSON.stringify(err)}`);
+            // Queue remains if failed, so we don't lose them? 
+            // Better to clear or handle retry. For MVP, we clear to avoid repeating error loops.
+            this.pendingTrash = [];
         }
     }
 

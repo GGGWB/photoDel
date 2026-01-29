@@ -85,6 +85,7 @@ struct Index {
         console.error("Delete failed");
       }
       this.currentIndex++;
+      this.checkCompletion();
     }
   }
 
@@ -96,6 +97,13 @@ struct Index {
       if (this.statsService) {
         await this.statsService.incrementKept();
       }
+      this.checkCompletion();
+    }
+  }
+
+  checkCompletion(): void {
+    if (this.currentIndex >= this.photos.length && this.photoService) {
+      this.photoService.commitDeletions();
     }
   }
 
