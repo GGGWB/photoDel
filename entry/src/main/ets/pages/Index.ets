@@ -1,9 +1,9 @@
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
-import { router } from '@kit.ArkUI';
 import { PhotoService } from '../services/PhotoService';
+import { StatsService } from '../services/StatsService';
 import { CardStack } from '../components/CardStack';
-import { ActionBar } from '../components/ActionBar';
+import { StatsBar } from '../components/StatsBar';
 import { AppColors, AppFontSizes, AppSpacing, AppRadius } from '../common/Theme';
 
 @Entry
@@ -13,15 +13,42 @@ struct Index {
   @State currentIndex: number = 0;
   @State removedCount: number = 0;
   @State isLoading: boolean = true;
-  @State showGuide: boolean = true;
+
+  // 相册总数
+  @State albumTotal: number = 0;
+
+  // 累计统计 (持久化)
+  @State totalProcessed: number = 0;
+  @State totalKept: number = 0;
+  @State totalDeleted: number = 0;
+
   private photoService: PhotoService | null = null;
+  private statsService: StatsService | null = null;
 
   aboutToAppear(): void {
     let context = getContext(this) as common.UIAbilityContext;
     this.photoService = new PhotoService(context);
+    this.statsService = new StatsService(context);
+
+    this.initStats();
+  }
+
+  async initStats(): Promise<void> {
+    if (this.statsService) {
+      await this.statsService.init();
+      this.totalProcessed = await this.statsService.getTotalProcessed();
+      this.totalKept = await this.statsService.getTotalKept();
+      this.totalDeleted = await this.statsService.getTotalDeleted();
+    }
+
+    // 获取相册总数
+    if (this.photoService) {
+      this.albumTotal = await this.photoService.getAlbumCount();
+    }
+
     setTimeout((): void => {
       this.loadPhotos();
-    }, 800);
+    }, 300);
   }
 
   async loadPhotos(): Promise<void> {
@@ -31,6 +58,12 @@ struct Index {
       const assets = await this.photoService.getRandomAssets(20);
       this.photos = assets;
       this.currentIndex = 0;
+
+      // 更新已处理总数
+      if (this.statsService && assets.length > 0) {
+        await this.statsService.addProcessed(assets.length);
+        this.totalProcessed = await this.statsService.getTotalProcessed();
+      }
     }
     this.isLoading = false;
   }
@@ -41,6 +74,12 @@ struct Index {
       try {
         await this.photoService.moveToTrash(asset);
         this.removedCount++;
+        this.totalDeleted++;
+        this.albumTotal--;
+
+        if (this.statsService) {
+          await this.statsService.incrementDeleted();
+        }
       } catch (err) {
         console.error("Delete failed");
       }
@@ -48,9 +87,14 @@ struct Index {
     }
   }
 
-  handleKeep(): void {
+  async handleKeep(): Promise<void> {
     if (this.currentIndex < this.photos.length) {
+      this.totalKept++;
       this.currentIndex++;
+
+      if (this.statsService) {
+        await this.statsService.incrementKept();
+      }
     }
   }
 
@@ -96,7 +140,7 @@ struct Index {
             .fontSize(AppFontSizes.SUBTITLE)
             .fontColor(AppColors.TEXT_PRIMARY)
             .fontWeight(FontWeight.Bold)
-          Text(`共 ${this.photos.length} 张`)
+          Text(`共 ${this.photos.length} 张待处理`)
             .fontSize(AppFontSizes.CAPTION)
             .fontColor(AppColors.TEXT_SECONDARY)
         }
@@ -104,24 +148,10 @@ struct Index {
         .margin({ left: AppSpacing.MD })
 
         Blank()
-
-        // 回收站按钮
-        Column() {
-          Text('🗑️')
-            .fontSize(24)
-        }
-        .width(44)
-        .height(44)
-        .borderRadius(AppRadius.MD)
-        .backgroundColor(AppColors.BG_TERTIARY)
-        .justifyContent(FlexAlign.Center)
-        .onClick((): void => {
-          router.pushUrl({ url: 'pages/TrashPage' });
-        })
       }
       .width('100%')
       .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
-      .backgroundColor(AppColors.BG_SECONDARY)
+      .backgroundColor(AppColors.BG_PRIMARY)
 
       // 主内容区
       Stack() {
@@ -160,7 +190,6 @@ struct Index {
                 this.loadPhotos();
               })
           }
-          .justifyContent(FlexAlign.Center)
         } else if (this.currentIndex >= this.photos.length) {
           // 完成状态
           Column() {
@@ -171,10 +200,13 @@ struct Index {
               .fontColor(AppColors.TEXT_PRIMARY)
               .fontWeight(FontWeight.Bold)
               .margin({ top: AppSpacing.MD })
-            Text(`本次删除 ${this.removedCount} 张照片`)
-              .fontSize(AppFontSizes.BODY)
-              .fontColor(AppColors.TEXT_SECONDARY)
-              .margin({ top: AppSpacing.SM })
+
+            Row() {
+              Text(`删除 ${this.removedCount} 张`)
+                .fontSize(AppFontSizes.BODY)
+                .fontColor(AppColors.ACCENT_DELETE)
+            }
+            .margin({ top: AppSpacing.SM })
 
             Button('再来一组')
               .height(56)
@@ -188,7 +220,6 @@ struct Index {
                 this.loadPhotos();
               })
           }
-          .justifyContent(FlexAlign.Center)
         } else {
           // 卡片堆叠
           CardStack({
@@ -203,16 +234,15 @@ struct Index {
       }
       .layoutWeight(1)
       .width('100%')
-      .justifyContent(FlexAlign.Center)
+      .alignContent(Alignment.Center)
 
-      // 底部操作栏 (仅在有照片且未完成时显示)
-      if (!this.isLoading && this.photos.length > 0 && this.currentIndex < this.photos.length) {
-        ActionBar({
-          onDelete: (): void => { this.handleDelete(); },
-          onKeep: (): void => { this.handleKeep(); },
-          onInfo: (): void => { this.handleInfo(); }
-        })
-      }
+      // 底部统计栏
+      StatsBar({
+        albumTotal: this.albumTotal,
+        totalProcessed: this.totalProcessed,
+        totalKept: this.totalKept,
+        totalDeleted: this.totalDeleted
+      })
     }
     .height('100%')
     .width('100%')

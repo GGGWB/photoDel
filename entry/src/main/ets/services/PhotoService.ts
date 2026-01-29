@@ -77,6 +77,29 @@ export class PhotoService {
     }
 
     /**
+     * Get total photo count in album
+     */
+    async getAlbumCount(): Promise<number> {
+        try {
+            let predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
+            let fetchOptions: photoAccessHelper.FetchOptions = {
+                fetchColumns: [],
+                predicates: predicates
+            };
+            const fetchResult = await this.phHelper.getAssets(fetchOptions);
+            if (fetchResult === undefined) {
+                return 0;
+            }
+            const count = fetchResult.getCount();
+            fetchResult.close();
+            return count;
+        } catch (err) {
+            console.error(`PhotoService: getAlbumCount failed: ${JSON.stringify(err)}`);
+            return 0;
+        }
+    }
+
+    /**
      * Get assets from trash - simplified version
      * Note: System trash access may require elevated permissions
      * For now, return empty and guide user to system Photos app

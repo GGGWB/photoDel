@@ -3,28 +3,28 @@
  * 统一管理颜色、字号、间距等设计常量
  */
 
-// 颜色系统
+// 颜色系统 - 浅色主题 (米色调)
 export class AppColors {
   // 背景色
-  static readonly BG_PRIMARY: string = '#0D0D0D';      // 主背景 - 纯黑
-  static readonly BG_SECONDARY: string = '#1A1A1A';    // 次背景 - 深灰
-  static readonly BG_TERTIARY: string = '#2D2D2D';     // 三级背景
-  static readonly BG_CARD: string = '#1F1F1F';         // 卡片背景
+  static readonly BG_PRIMARY: string = '#FAF9F6';      // 主背景 - 米白
+  static readonly BG_SECONDARY: string = '#F0EFEB';    // 次背景 - 暖灰
+  static readonly BG_TERTIARY: string = '#E8E6E1';     // 三级背景
+  static readonly BG_CARD: string = '#FFFFFF';         // 卡片背景
 
   // 强调色
-  static readonly ACCENT_DELETE: string = '#FF4757';   // 删除 - 红色
-  static readonly ACCENT_KEEP: string = '#2ED573';     // 保留 - 绿色
-  static readonly ACCENT_INFO: string = '#5352ED';     // 详情 - 紫色
-  static readonly ACCENT_PRIMARY: string = '#007AFF'; // 主强调色 - 蓝
+  static readonly ACCENT_DELETE: string = '#FF3B30';   // 删除 - 红色
+  static readonly ACCENT_KEEP: string = '#34C759';     // 保留 - 绿色
+  static readonly ACCENT_INFO: string = '#007AFF';     // 详情 - 蓝色
+  static readonly ACCENT_PRIMARY: string = '#007AFF';  // 主强调色 - 蓝
 
   // 文字色
-  static readonly TEXT_PRIMARY: string = '#FFFFFF';    // 主文字
-  static readonly TEXT_SECONDARY: string = '#8E8E93';  // 次文字
-  static readonly TEXT_TERTIARY: string = '#636366';   // 辅助文字
+  static readonly TEXT_PRIMARY: string = '#1C1C1E';    // 主文字 - 深灰黑
+  static readonly TEXT_SECONDARY: string = '#8E8E93';  // 次文字 - 灰
+  static readonly TEXT_TERTIARY: string = '#C7C7CC';   // 辅助文字
 
   // 遮罩
   static readonly OVERLAY_LIGHT: string = '#40FFFFFF';
-  static readonly OVERLAY_DARK: string = '#80000000';
+  static readonly OVERLAY_DARK: string = '#60000000';
 }
 
 // 字体大小

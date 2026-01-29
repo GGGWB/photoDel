@@ -32,12 +32,12 @@ struct TrashPage {
         // 返回按钮
         Column() {
           Text('←')
-            .fontSize(24)
+            .fontSize(20)
             .fontColor(AppColors.TEXT_PRIMARY)
         }
-        .width(44)
-        .height(44)
-        .borderRadius(AppRadius.MD)
+        .width(40)
+        .height(40)
+        .borderRadius(AppRadius.SM)
         .backgroundColor(AppColors.BG_TERTIARY)
         .justifyContent(FlexAlign.Center)
         .onClick((): void => {
@@ -74,8 +74,8 @@ struct TrashPage {
       } else if (this.trashPhotos.length === 0) {
         Column() {
           Text('🗑️')
-            .fontSize(80)
-            .opacity(0.5)
+            .fontSize(64)
+            .opacity(0.3)
           Text('回收站为空')
             .fontSize(AppFontSizes.TITLE)
             .fontColor(AppColors.TEXT_PRIMARY)
@@ -93,35 +93,20 @@ struct TrashPage {
         Grid() {
           ForEach(this.trashPhotos, (asset: photoAccessHelper.PhotoAsset) => {
             GridItem() {
-              Stack() {
-                Image(asset.uri)
-                  .objectFit(ImageFit.Cover)
-                  .width('100%')
-                  .height('100%')
-                  .borderRadius(AppRadius.SM)
-
-                // 恢复图标
-                Column() {
-                  Text('↩️')
-                    .fontSize(20)
-                }
-                .width(36)
-                .height(36)
-                .borderRadius(AppRadius.FULL)
-                .backgroundColor(AppColors.OVERLAY_DARK)
-                .justifyContent(FlexAlign.Center)
-                .position({ x: 8, y: 8 })
-              }
-              .width('100%')
-              .aspectRatio(1)
-              .onClick((): void => {
-                this.getUIContext().showAlertDialog({
-                  title: '恢复照片',
-                  message: '请在系统相册中恢复已删除的照片',
-                  confirm: { value: '知道了', action: (): void => {} }
-                });
-              })
+              Image(asset.uri)
+                .objectFit(ImageFit.Cover)
+                .width('100%')
+                .height('100%')
+                .borderRadius(AppRadius.SM)
             }
+            .aspectRatio(1)
+            .onClick((): void => {
+              this.getUIContext().showAlertDialog({
+                title: '恢复照片',
+                message: '请在系统相册中恢复已删除的照片',
+                confirm: { value: '知道了', action: (): void => {} }
+              });
+            })
           })
         }
         .columnsTemplate('1fr 1fr 1fr')
