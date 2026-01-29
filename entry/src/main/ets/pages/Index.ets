@@ -1,5 +1,6 @@
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
+
 import { PhotoService } from '../services/PhotoService';
 import { StatsService } from '../services/StatsService';
 import { CardStack } from '../components/CardStack';
@@ -119,39 +120,56 @@ struct Index {
   build() {
     Column() {
       // 顶部导航栏
-      Row() {
-        // 进度指示
-        Stack() {
-          Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
-            .width(44)
-            .height(44)
-            .style({ strokeWidth: 4 })
-            .color(AppColors.ACCENT_PRIMARY)
-            .backgroundColor(AppColors.BG_TERTIARY)
+      // 顶部导航栏
+      Stack({ alignContent: Alignment.Center }) {
+        // 左侧进度 (绝对定位或在Row中)
+        Row() {
+          Stack() {
+            Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
+              .width(44)
+              .height(44)
+              .style({ strokeWidth: 4 })
+              .color(AppColors.ACCENT_PRIMARY)
+              .backgroundColor(AppColors.BG_TERTIARY)
 
-          Text(`${this.currentIndex}`)
-            .fontSize(14)
-            .fontColor(AppColors.TEXT_PRIMARY)
-            .fontWeight(FontWeight.Bold)
+            Text(`${this.currentIndex}`)
+              .fontSize(14)
+              .fontColor(AppColors.TEXT_PRIMARY)
+              .fontWeight(FontWeight.Bold)
+          }
         }
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
 
-        Column() {
-          Text('Photo Cleaner')
-            .fontSize(AppFontSizes.SUBTITLE)
-            .fontColor(AppColors.TEXT_PRIMARY)
-            .fontWeight(FontWeight.Bold)
-          Text(`共 ${this.photos.length} 张待处理`)
-            .fontSize(AppFontSizes.CAPTION)
-            .fontColor(AppColors.TEXT_SECONDARY)
+        // 右侧设置菜单 (汉堡图标)
+        Row() {
+          Column({ space: 6 }) { // 间距 6
+            // 三条横线
+            Rect().width(24).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1)
+            Rect().width(16).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1).alignSelf(ItemAlign.End) // 第二条短一点，设计感
+            Rect().width(24).height(2).fill(AppColors.ACCENT_PRIMARY).radius(1)
+          }
+          .width(44)
+          .height(44)
+          .justifyContent(FlexAlign.Center)
+          .onClick((): void => {
+             // 暂时无动作，或者显示设置
+             this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
+          })
         }
-        .alignItems(HorizontalAlign.Start)
-        .margin({ left: AppSpacing.MD })
+        .width('100%')
+        .justifyContent(FlexAlign.End)
 
-        Blank()
+        // 中间标题
+        Text('去留之间')
+          .fontSize(AppFontSizes.SUBTITLE)
+          .fontColor(AppColors.ACCENT_INFO)
+          .fontWeight(FontWeight.Bold)
+          // Removed shadow as requested ("不要外边框")
       }
       .width('100%')
       .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
-      .backgroundColor(AppColors.BG_PRIMARY)
+      // Removed background color and blur as requested
 
       // 主内容区
       Stack() {
@@ -192,33 +210,64 @@ struct Index {
           }
         } else if (this.currentIndex >= this.photos.length) {
           // 完成状态
+          // 完成状态 (Neon & Glass)
           Column() {
-            Text('🎉')
+            // 霓虹奖杯
+            Text('🏆')
               .fontSize(100)
-            Text('整理完成!')
-              .fontSize(AppFontSizes.TITLE)
+              // Removed shadow ("不要外边框")
+            
+            Text('All Clean!')
+              .fontSize(36)
               .fontColor(AppColors.TEXT_PRIMARY)
-              .fontWeight(FontWeight.Bold)
-              .margin({ top: AppSpacing.MD })
+              .fontWeight(FontWeight.Bolder)
+              .margin({ top: AppSpacing.LG })
+              // Removed shadow ("不要外边框")
 
             Row() {
-              Text(`删除 ${this.removedCount} 张`)
+              Text(`本次清除 ${this.removedCount} 张照片`)
                 .fontSize(AppFontSizes.BODY)
-                .fontColor(AppColors.ACCENT_DELETE)
+                .fontColor(AppColors.TEXT_SECONDARY)
             }
-            .margin({ top: AppSpacing.SM })
+            .margin({ top: AppSpacing.MD })
+            .padding({ left: 16, right: 16, top: 8, bottom: 8 })
+            .backgroundColor(AppColors.GLASS_BG)
+            .borderRadius(AppRadius.FULL)
 
-            Button('再来一组')
-              .height(56)
-              .width(200)
-              .borderRadius(AppRadius.XL)
-              .backgroundColor(AppColors.ACCENT_PRIMARY)
-              .fontSize(AppFontSizes.SUBTITLE)
-              .fontWeight(FontWeight.Bold)
-              .margin({ top: AppSpacing.XXL })
-              .onClick((): void => {
-                this.loadPhotos();
-              })
+            // 按钮组
+            Row({ space: AppSpacing.LG }) {
+              // 再来20张
+              Button('再来20张')
+                .height(48)
+                .padding({ left: 24, right: 24 })
+                .borderRadius(AppRadius.FULL)
+                .backgroundColor(AppColors.GLASS_BG)
+                .backgroundBlurStyle(BlurStyle.Regular)
+                .border({ width: 1, color: AppColors.ACCENT_PRIMARY })
+                .fontSize(16)
+                .fontColor(AppColors.ACCENT_PRIMARY)
+                .fontWeight(FontWeight.Bold)
+                .onClick((): void => {
+                  this.loadPhotos();
+                })
+
+              // 退出
+              Button('退出')
+                .height(48)
+                .padding({ left: 24, right: 24 })
+                .borderRadius(AppRadius.FULL)
+                .backgroundColor(AppColors.GLASS_BG)
+                .backgroundBlurStyle(BlurStyle.Regular)
+                .border({ width: 1, color: AppColors.ACCENT_DELETE })
+                .fontSize(16)
+                .fontColor(AppColors.ACCENT_DELETE)
+                .fontWeight(FontWeight.Bold)
+                .onClick((): void => {
+                  const context = getContext(this) as common.UIAbilityContext;
+                  context.terminateSelf();
+                })
+            }
+            .margin({ top: AppSpacing.XXL })
           }
         } else {
           // 卡片堆叠
@@ -246,6 +295,13 @@ struct Index {
     }
     .height('100%')
     .width('100%')
-    .backgroundColor(AppColors.BG_PRIMARY)
+    .linearGradient({
+      angle: 180, // 从上到下
+      colors: [
+        [AppColors.BG_PRIMARY, 0.0],
+        [AppColors.BG_SECONDARY, 0.6],
+        [AppColors.BG_TERTIARY, 1.0]
+      ]
+    })
   }
 }

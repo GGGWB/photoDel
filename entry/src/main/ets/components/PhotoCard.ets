@@ -19,11 +19,12 @@ export struct PhotoCard {
     .width('100%')
     .height('100%')
     .shadow({
-      radius: this.isActive ? 16 : 8,
-      color: '#25000000',
+      radius: this.isActive ? 40 : 20,
+      color: this.isActive ? '#667F00FF' : '#50000000', // 激活时显示紫色光晕
       offsetX: 0,
-      offsetY: this.isActive ? 6 : 3
+      offsetY: this.isActive ? 10 : 5
     })
+    .border({ width: 1, color: AppColors.GLASS_BORDER }) // 玻璃质感边框
     .borderRadius(AppRadius.LG)
     .clip(true)
     // 添加隐式动画，使 shadow/offsetY 的变化平滑过渡，避免视觉突变

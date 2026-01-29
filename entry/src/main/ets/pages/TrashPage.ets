@@ -28,37 +28,34 @@ struct TrashPage {
   build() {
     Column() {
       // 顶部导航栏
-      Row() {
-        // 返回按钮
-        Column() {
-          Text('←')
-            .fontSize(20)
-            .fontColor(AppColors.TEXT_PRIMARY)
+      Stack({ alignContent: Alignment.Center }) {
+        // 左侧返回按钮
+        Row() {
+          Column() {
+            Text('←')
+              .fontSize(24) // Slightly larger for better clickability
+              .fontColor(AppColors.ACCENT_PRIMARY) // Neon accent
+              .fontWeight(FontWeight.Bold)
+          }
+          .width(44)
+          .height(44)
+          .justifyContent(FlexAlign.Center)
+          .onClick((): void => {
+            router.back();
+          })
         }
-        .width(40)
-        .height(40)
-        .borderRadius(AppRadius.SM)
-        .backgroundColor(AppColors.BG_TERTIARY)
-        .justifyContent(FlexAlign.Center)
-        .onClick((): void => {
-          router.back();
-        })
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
 
+        // 中间标题
         Text("回收站")
           .fontSize(AppFontSizes.SUBTITLE)
-          .fontColor(AppColors.TEXT_PRIMARY)
+          .fontColor(AppColors.ACCENT_INFO) // Match Index Title Color
           .fontWeight(FontWeight.Bold)
-          .margin({ left: AppSpacing.MD })
-
-        Blank()
-
-        Text(`${this.trashPhotos.length} 张`)
-          .fontSize(AppFontSizes.CAPTION)
-          .fontColor(AppColors.TEXT_SECONDARY)
       }
       .width('100%')
       .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: AppSpacing.MD, bottom: AppSpacing.MD })
-      .backgroundColor(AppColors.BG_SECONDARY)
+      // Removed background color as requested
 
       // 内容区
       if (this.isLoading) {
@@ -118,6 +115,13 @@ struct TrashPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(AppColors.BG_PRIMARY)
+    .linearGradient({
+      angle: 180, // 从上到下
+      colors: [
+        [AppColors.BG_PRIMARY, 0.0],
+        [AppColors.BG_SECONDARY, 0.6],
+        [AppColors.BG_TERTIARY, 1.0]
+      ]
+    })
   }
 }

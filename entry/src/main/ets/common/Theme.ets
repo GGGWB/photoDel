@@ -3,28 +3,34 @@
  * 统一管理颜色、字号、间距等设计常量
  */
 
-// 颜色系统 - 浅色主题 (米色调)
+// 颜色系统 - 深色主题 (Glassmorphism & Neon)
 export class AppColors {
   // 背景色
-  static readonly BG_PRIMARY: string = '#FAF9F6';      // 主背景 - 米白
-  static readonly BG_SECONDARY: string = '#F0EFEB';    // 次背景 - 暖灰
-  static readonly BG_TERTIARY: string = '#E8E6E1';     // 三级背景
-  static readonly BG_CARD: string = '#FFFFFF';         // 卡片背景
+  static readonly BG_PRIMARY: string = '#0F0C29';      // 渐变起点 (Midnight Blue)
+  static readonly BG_SECONDARY: string = '#302B63';    // 渐变中间 (Deep Purple)
+  static readonly BG_TERTIARY: string = '#24243E';     // 渐变终点 (Dark Blue-Grey)
+  
+  static readonly GLASS_BG: string = '#1AFFFFFF';      // 玻璃态背景 (10% White)
+  static readonly GLASS_BORDER: string = '#33FFFFFF';  // 玻璃态边框 (20% White)
 
-  // 强调色
-  static readonly ACCENT_DELETE: string = '#FF3B30';   // 删除 - 红色
-  static readonly ACCENT_KEEP: string = '#34C759';     // 保留 - 绿色
-  static readonly ACCENT_INFO: string = '#007AFF';     // 详情 - 蓝色
-  static readonly ACCENT_PRIMARY: string = '#007AFF';  // 主强调色 - 蓝
+  // 强调色 (Neon)
+  static readonly ACCENT_DELETE: string = '#FF0055';   // 霓虹红
+  static readonly ACCENT_KEEP: string = '#00FF99';     // 霓虹绿
+  static readonly ACCENT_INFO: string = '#00DDEB';     // 霓虹蓝
+  static readonly ACCENT_PRIMARY: string = '#7F00FF';  // 主强调色 (Electric Violet)
+  
+  // 阴影光晕
+  static readonly GLOW_DELETE: string = '#80FF0055';   // 红色光晕
+  static readonly GLOW_KEEP: string = '#8000FF99';     // 绿色光晕
 
   // 文字色
-  static readonly TEXT_PRIMARY: string = '#1C1C1E';    // 主文字 - 深灰黑
-  static readonly TEXT_SECONDARY: string = '#8E8E93';  // 次文字 - 灰
-  static readonly TEXT_TERTIARY: string = '#C7C7CC';   // 辅助文字
+  static readonly TEXT_PRIMARY: string = '#FFFFFF';    // 主文字 - 纯白
+  static readonly TEXT_SECONDARY: string = '#EBEBF5';  // 次文字 - 浅灰 (60% White)
+  static readonly TEXT_TERTIARY: string = '#EBEBF599'; // 辅助文字 - (30% White)
 
   // 遮罩
-  static readonly OVERLAY_LIGHT: string = '#40FFFFFF';
-  static readonly OVERLAY_DARK: string = '#60000000';
+  static readonly OVERLAY_LIGHT: string = '#1AFFFFFF';
+  static readonly OVERLAY_DARK: string = '#80000000';
 }
 
 // 字体大小
@@ -52,6 +58,7 @@ export class AppRadius {
   static readonly MD: number = 16;
   static readonly LG: number = 24;
   static readonly XL: number = 32;
+  static readonly XXL: number = 48;
   static readonly FULL: number = 999;
 }
 

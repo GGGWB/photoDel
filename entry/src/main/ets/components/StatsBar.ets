@@ -75,17 +75,20 @@ export struct StatsBar {
         .width(32)
         .height(32)
         .borderRadius(AppRadius.SM)
-        .backgroundColor(AppColors.BG_TERTIARY)
+        // Removed background color as requested
         .justifyContent(FlexAlign.Center)
         .onClick((): void => {
           router.pushUrl({ url: 'pages/TrashPage' });
         })
       }
-      .width('100%')
       .padding({ left: AppSpacing.SM, right: AppSpacing.MD, top: AppSpacing.SM, bottom: AppSpacing.SM })
     }
-    .width('100%')
-    .backgroundColor(AppColors.BG_SECONDARY)
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
+    .width('94%') // 浮动效果，不占满全宽
+    .margin({ bottom: AppSpacing.MD })
+    .backgroundColor(AppColors.GLASS_BG) // 玻璃背景
+    .backgroundBlurStyle(BlurStyle.Thin) // 毛玻璃模糊
+    .borderRadius(AppRadius.XXL) // 大圆角
+    .border({ width: 1, color: AppColors.GLASS_BORDER }) // 玻璃边框
+    .shadow({ radius: 20, color: AppColors.OVERLAY_DARK, offsetY: 10 }) // 悬浮阴影
   }
 }
