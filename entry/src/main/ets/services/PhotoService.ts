@@ -1,3 +1,17 @@
+/**
+ * PhotoService.ts
+ * 
+ * 照片管理服务 (Photo Management Service)
+ * 负责与系统媒体库 (MediaLibraryKit) 交互。
+ * 
+ * 核心功能：
+ * - 获取相册资源 (getRandomAssets)。
+ * - 移动照片到回收站 (moveToTrash)。
+ * - 统计相册总数 (getAlbumCount)。
+ * 
+ * v2.4 修复：
+ * - 显式查询 WIDTH 和 HEIGHT 列，解决全屏预览时的 Crash 问题。
+ */
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { dataSharePredicates } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';

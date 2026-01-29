@@ -1,3 +1,17 @@
+/**
+ * Index.ets
+ * 
+ * 主页面 (Main Page)
+ * 核心功能：
+ * 1. 卡片堆叠交互 (CardStack)：左滑详情，上滑保留，下滑删除。
+ * 2. 沉浸式全屏预览 (Immersive Full Screen)：支持共享元素转场。
+ * 3. 数据统计 (StatsBar)：实时显示处理进度与结果。
+ * 
+ * v2.4 更新：
+ * - 优化了全屏预览的稳定性 (Crash Fix & Debounce)。
+ * - 调整了顶部图标的样式与布局 (UI Polish)。
+ * - 实现了智能图片适配策略 (Smart ObjectFit)。
+ */
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
 
@@ -153,9 +167,9 @@ struct Index {
           Row() {
             Stack() {
               Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
-                .width(44)
-                .height(44)
-                .style({ strokeWidth: 4 })
+                .width(40)
+                .height(40)
+                .style({ strokeWidth: 3 })
                 .color(AppColors.ACCENT_PRIMARY)
                 .backgroundColor(AppColors.BG_TERTIARY)
 
@@ -170,17 +184,26 @@ struct Index {
 
           // 右侧设置菜单
           Row() {
-            Image($r('sys.media.ohos_ic_public_more'))
-              .width(24)
-              .height(24)
-              .fillColor(AppColors.ACCENT_PRIMARY)
+            Stack() {
+              Progress({ value: 1, total: 1, type: ProgressType.Ring })
+                .width(36)
+                .height(36)
+                .style({ strokeWidth: 2 }) // 更细的圆圈
+                .color(AppColors.ACCENT_PRIMARY)
+                .backgroundColor(AppColors.BG_TERTIARY)
+
+              // 汉堡菜单图标 (三道杠)
+              Column({ space: 3 }) { //稍微减小间距以匹配更小的图标
+                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
+                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
+                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
+              }
+              .justifyContent(FlexAlign.Center)
+            }
+            .onClick((): void => {
+              this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
+            })
           }
-          .width(44)
-          .height(44)
-          .justifyContent(FlexAlign.Center)
-          .onClick((): void => {
-             this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
-          })
           .width('100%')
           .justifyContent(FlexAlign.End)
 
