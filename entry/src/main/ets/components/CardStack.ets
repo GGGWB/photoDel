@@ -5,74 +5,86 @@ import { AppColors } from '../common/Theme';
 @Component
 export struct CardStack {
   @Link photos: Array<photoAccessHelper.PhotoAsset>;
-  @Link currentIndex: number;
+  @Link @Watch('onIndexChange') currentIndex: number;
   @Link removedCount: number;
 
-  // Callbacks with explicit types
+  // Callbacks
   onSwipeLeft: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
-  onSwipeRight: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeUp: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
   onSwipeDown: (photo: photoAccessHelper.PhotoAsset) => void = (photo: photoAccessHelper.PhotoAsset): void => {};
 
-  // Gesture State
+  // 手势状态
   @State offsetX: number = 0;
   @State offsetY: number = 0;
   @State rotateAngle: number = 0;
+  @State isAnimating: boolean = false;
 
-  private readonly THRESHOLD: number = 100;
+  // 下层卡片动态缩放
+  // @State nextScale: number = 0.92; // Deduced: Removed scaling
+
+  private readonly THRESHOLD: number = 80;
+
+  // 当 currentIndex 变化时，立即重置所有动画状态
+  onIndexChange(): void {
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.rotateAngle = 0;
+    this.isAnimating = false;
+  }
 
   build() {
     Stack() {
-      // 底层卡片 (下一张)
-      if (this.currentIndex + 1 < this.photos.length) {
-        PhotoCard({
-          assetUri: this.photos[this.currentIndex + 1].uri,
-          isActive: false
-        })
-          .scale({ x: 0.9, y: 0.9 })
-          .opacity(0.8)
-          .zIndex(0)
-      }
+      // 使用 ForEach 渲染可见的 2 张照片，确保组件身份的稳定性
+      // slice 切片：当前张 + 下一张
+      ForEach(this.photos.slice(this.currentIndex, this.currentIndex + 2), (item: photoAccessHelper.PhotoAsset, index: number) => {
+        Stack() {
+          PhotoCard({
+            assetUri: item.uri,
+            isActive: index === 0 // 列表中的第一个就是当前活动的顶层卡片
+          })
+        }
+        .zIndex(index === 0 ? 1 : 0) // 顶层 zIndex=1, 底层=0
+        // 只有顶层卡片(index=0)应用偏才和旋转
+        .translate(index === 0 ? { x: this.offsetX, y: this.offsetY } : { x: 0, y: 0 })
+        .rotate(index === 0 ? { angle: this.rotateAngle } : { angle: 0 })
+        // 绑定手势 (所有卡片都绑定，但只有 index=0 响应)
+        // 避免在组件复用时动态移除/添加手势导致失效
+        .gesture(
+          PanGesture()
+            .onActionUpdate((event?: GestureEvent): void => {
+              // 只有顶层卡片允许滑动
+              if (index !== 0) return;
 
-      // 顶层卡片 (当前)
-      if (this.currentIndex < this.photos.length) {
-        PhotoCard({
-          assetUri: this.photos[this.currentIndex].uri,
-          isActive: true
-        })
-          .zIndex(1)
-          .translate({ x: this.offsetX, y: this.offsetY })
-          .rotate({ angle: this.rotateAngle })
-          .gesture(
-            PanGesture()
-              .onActionUpdate((event?: GestureEvent): void => {
-                if (event) {
-                  this.offsetX = event.offsetX;
-                  this.offsetY = event.offsetY;
-                  this.rotateAngle = event.offsetX / 20;
-                }
-              })
-              .onActionEnd((): void => {
-                if (this.offsetY > this.THRESHOLD) {
-                  // 下滑删除
+              if (event && !this.isAnimating) {
+                this.offsetX = event.offsetX;
+                this.offsetY = event.offsetY;
+                this.rotateAngle = event.offsetX / 15;
+              }
+            })
+            .onActionEnd((): void => {
+              if (index !== 0) return;
+              if (this.isAnimating) return;
+
+              if (this.offsetY > this.THRESHOLD) {
+                this.flyOut('down', (): void => {
                   this.onSwipeDown(this.photos[this.currentIndex]);
-                  this.resetPosition();
-                } else if (this.offsetY < -this.THRESHOLD) {
-                  // 上滑保留
+                });
+              } else if (this.offsetY < -this.THRESHOLD) {
+                this.flyOut('up', (): void => {
                   this.onSwipeUp(this.photos[this.currentIndex]);
-                  this.resetPosition();
-                } else if (this.offsetX < -this.THRESHOLD) {
-                  // 左滑详情
-                  this.onSwipeLeft(this.photos[this.currentIndex]);
-                  this.animateReset();
-                } else {
-                  // 回弹
-                  this.animateReset();
-                }
-              })
-          )
-      } else {
-        // 空状态
+                });
+              } else if (this.offsetX < -this.THRESHOLD) {
+                this.onSwipeLeft(this.photos[this.currentIndex]);
+                this.animateReset();
+              } else {
+                this.animateReset();
+              }
+            })
+        )
+      }, (item: photoAccessHelper.PhotoAsset) => item.uri) // 关键：使用 uri 作为唯一键值，确保复用
+
+      if (this.currentIndex >= this.photos.length) {
+        // 完成状态
         Column() {
           Text('🎉')
             .fontSize(80)
@@ -88,14 +100,31 @@ export struct CardStack {
     .height('70%')
   }
 
-  resetPosition(): void {
-    this.offsetX = 0;
-    this.offsetY = 0;
-    this.rotateAngle = 0;
+  flyOut(direction: string, callback: () => void): void {
+    this.isAnimating = true;
+    let targetY = direction === 'down' ? 800 : -800;
+
+    // 动画：仅顶层飞出
+    this.getUIContext().animateTo({
+      duration: 250,
+      curve: Curve.EaseOut,
+      onFinish: (): void => {
+        // 动画结束，只负责触发回调更新 index
+        // 状态重置由 onIndexChange 自动接管
+        callback();
+      }
+    }, (): void => {
+      this.offsetY = targetY;
+      this.offsetX = this.offsetX * 1.5;
+      this.rotateAngle = this.rotateAngle * 1.2;
+    });
   }
 
   animateReset(): void {
-    this.getUIContext().animateTo({ duration: 300 }, (): void => {
+    this.getUIContext().animateTo({
+      duration: 200,
+      curve: Curve.EaseOut
+    }, (): void => {
       this.offsetX = 0;
       this.offsetY = 0;
       this.rotateAngle = 0;

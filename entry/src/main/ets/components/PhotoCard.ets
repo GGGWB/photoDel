@@ -13,6 +13,8 @@ export struct PhotoCard {
         .width('100%')
         .height('100%')
         .borderRadius(AppRadius.LG)
+        // 强制同步加载，防止重新渲染时出现白屏闪烁
+        .syncLoad(true)
     }
     .width('100%')
     .height('100%')
@@ -24,5 +26,7 @@ export struct PhotoCard {
     })
     .borderRadius(AppRadius.LG)
     .clip(true)
+    // 添加隐式动画，使 shadow/offsetY 的变化平滑过渡，避免视觉突变
+    .animation({ duration: 200 })
   }
 }
