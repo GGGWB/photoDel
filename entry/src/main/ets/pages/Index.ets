@@ -387,6 +387,7 @@ struct Index {
                 });
               } 
             })
+            .offset({ y: -10 }) // Move whole card stack up by 10vp (relative to original)
           }
         }
         .layoutWeight(1)

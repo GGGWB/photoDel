@@ -102,8 +102,8 @@ export struct CardStack {
         }
       }
     }
-    .width('90%') // 缩小宽度
-    .height('86%') // 增加高度
+    .width('88%')
+    .height('92%') // Reduced from 100% to give top/bottom spacing
   }
 
   flyOut(direction: string, callback: () => void): void {

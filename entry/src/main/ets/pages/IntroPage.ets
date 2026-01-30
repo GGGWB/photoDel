@@ -101,7 +101,7 @@ struct IntroPage {
           .position({ x: 80, y: 60 })
         }
         .width('100%')
-        .height(250)
+        .height(210) // Reduced height to compact layout
         .margin({ top: 10 }) // Reduced margin
 
         // --- Gesture Guides (Compact) ---
@@ -147,7 +147,8 @@ struct IntroPage {
           .fontWeight(FontWeight.Medium)
           .fontColor('#424242')
           .letterSpacing(4)
-          .margin({ top: 15 }) // Reduced margin
+          .letterSpacing(4)
+          .margin({ top: 20 }) // Reduced margin to pull up
 
         Text('Keep what matters.')
           .fontSize(14)
@@ -160,18 +161,18 @@ struct IntroPage {
         // --- Action Hint ---
         Column() {
           Text('SWIPE UP')
-            .fontSize(12)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#BDBDBD')
-            .letterSpacing(2)
+            .fontSize(14) // Match Keep what matters
+            .fontColor('#9E9E9E') // Match Keep what matters
+            .margin({ top: 4 })
+            .fontStyle(FontStyle.Italic) // Match Keep what matters
           
           Text('上滑开启整理')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor('#1D1D1F')
-            .margin({ top: 4 })
+            .margin({ top: 12 }) // Increased spacing
         }
-        .margin({ bottom: 30 }) // Lifted up
+        .margin({ bottom: 180 }) // Lifted up even more
         .onClick(() => {
           this.triggerFlyOut();
         })
