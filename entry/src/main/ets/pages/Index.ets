@@ -119,6 +119,11 @@ struct Index {
 
   async handleKeep(): Promise<void> {
     if (this.currentIndex < this.photos.length) {
+      // Mark as seen (persistent history)
+      const context = getContext(this) as common.UIAbilityContext;
+      const asset = this.photos[this.currentIndex];
+      await PhotoService.markAsSeen(context, asset.uri);
+
       this.totalKept++;
       this.totalProcessed++; // 增加已处理数
       this.currentIndex++;
@@ -235,28 +240,59 @@ struct Index {
                 .margin({ top: AppSpacing.MD })
             }
           } else if (this.photos.length === 0) {
-            Column() {
-              Text('📷')
-                .fontSize(80)
-              Text('暂无照片')
-                .fontSize(AppFontSizes.TITLE)
-                .fontColor(AppColors.TEXT_PRIMARY)
-                .fontWeight(FontWeight.Bold)
-                .margin({ top: AppSpacing.MD })
-              Text('请授予相册访问权限')
-                .fontSize(AppFontSizes.BODY)
-                .fontColor(AppColors.TEXT_SECONDARY)
-                .margin({ top: AppSpacing.SM })
+            // 空状态处理
+            if (this.albumTotal > 0) {
+              // Case 1: 有照片但都被过滤了 (All Caught Up)
+              Column() {
+                Text('🎉')
+                  .fontSize(80)
+                Text('全部看完啦')
+                  .fontSize(AppFontSizes.TITLE)
+                  .fontColor(AppColors.TEXT_PRIMARY)
+                  .fontWeight(FontWeight.Bold)
+                  .margin({ top: AppSpacing.MD })
+                Text('所有照片都已整理完毕')
+                  .fontSize(AppFontSizes.BODY)
+                  .fontColor(AppColors.TEXT_SECONDARY)
+                  .margin({ top: AppSpacing.SM })
 
-              Button('重新加载')
-                .height(48)
-                .width(160)
-                .borderRadius(AppRadius.LG)
-                .backgroundColor(AppColors.ACCENT_PRIMARY)
-                .margin({ top: AppSpacing.XL })
-                .onClick((): void => {
-                  this.loadPhotos();
-                })
+                // Optional: Provide a way to restart logic or verify
+                 Button('刷新检查')
+                  .height(48)
+                  .width(160)
+                  .borderRadius(AppRadius.LG)
+                  .backgroundColor(AppColors.BG_TERTIARY)
+                  .fontColor(AppColors.TEXT_PRIMARY)
+                  .margin({ top: AppSpacing.XL })
+                  .onClick((): void => {
+                    this.loadPhotos();
+                  })
+              }
+            } else {
+              // Case 2: 系统真的没照片 (或无权限)
+              Column() {
+                Text('📷')
+                  .fontSize(80)
+                Text('暂无照片')
+                  .fontSize(AppFontSizes.TITLE)
+                  .fontColor(AppColors.TEXT_PRIMARY)
+                  .fontWeight(FontWeight.Bold)
+                  .margin({ top: AppSpacing.MD })
+                Text('请授予相册访问权限')
+                  .fontSize(AppFontSizes.BODY)
+                  .fontColor(AppColors.TEXT_SECONDARY)
+                  .margin({ top: AppSpacing.SM })
+
+                Button('重新加载')
+                  .height(48)
+                  .width(160)
+                  .borderRadius(AppRadius.LG)
+                  .backgroundColor(AppColors.ACCENT_PRIMARY)
+                  .margin({ top: AppSpacing.XL })
+                  .onClick((): void => {
+                    this.loadPhotos();
+                  })
+              }
             }
           } else if (this.currentIndex >= this.photos.length) {
             // 完成状态

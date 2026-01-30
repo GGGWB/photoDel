@@ -13,15 +13,23 @@
  * - 显式查询 WIDTH 和 HEIGHT 列，解决全屏预览时的 Crash 问题。
  */
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
-import { dataSharePredicates } from '@kit.ArkData';
+import { dataSharePredicates, preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 
 export class PhotoService {
     private context: common.UIAbilityContext;
     private phHelper: photoAccessHelper.PhotoAccessHelper;
 
-    // Static storage for preloading
-    private static preloadedAssets: Array<photoAccessHelper.PhotoAsset> | null = null;
+    // Static Session Deck
+    private static sessionAssets: Array<photoAccessHelper.PhotoAsset> = [];
+    private static sessionCursor: number = 0;
+    private static isInitialized: boolean = false;
+
+    // Persistent History
+    private static seenUris: Set<string> = new Set();
+    private static preferences: preferences.Preferences | null = null;
+    private static readonly PREF_NAME = 'photo_cleaner_history';
+    private static readonly KEY_SEEN_URIS = 'seen_uris';
 
     constructor(context: common.UIAbilityContext) {
         this.context = context;
@@ -29,45 +37,80 @@ export class PhotoService {
     }
 
     /**
-     * Preload assets into static memory
+     * Initialize Preferences and load seen URIs
      */
-    public static async preload(context: common.UIAbilityContext): Promise<void> {
-        if (PhotoService.preloadedAssets && PhotoService.preloadedAssets.length > 0) {
-            console.info('PhotoService: Already preloaded.');
-            return;
-        }
+    private static async initPreferences(context: common.UIAbilityContext): Promise<void> {
+        if (PhotoService.preferences) return;
         try {
-            console.info('PhotoService: Starting preload...');
-            const service = new PhotoService(context);
-            // Fetch more than usual (e.g. 50) to ensure smooth start
-            const assets = await service.getRandomAssets(40);
-            PhotoService.preloadedAssets = assets;
-            console.info(`PhotoService: Preloaded ${assets.length} assets.`);
+            PhotoService.preferences = await preferences.getPreferences(context, PhotoService.PREF_NAME);
+            const seenStr = await PhotoService.preferences.get(PhotoService.KEY_SEEN_URIS, '[]') as string;
+            const seenArray = JSON.parse(seenStr) as string[];
+            PhotoService.seenUris = new Set(seenArray);
+            console.info(`PhotoService: Loaded ${PhotoService.seenUris.size} seen photos from history.`);
         } catch (err) {
-            console.error(`PhotoService: Preload failed: ${JSON.stringify(err)}`);
+            console.error('PhotoService: Failed to init preferences', JSON.stringify(err));
         }
     }
 
     /**
-     * Consume preloaded assets. Returns null if none available.
-     * Clears storage after consumption.
+     * Mark a photo as seen (kept) and persist it
+     */
+    public static async markAsSeen(context: common.UIAbilityContext, uri: string): Promise<void> {
+        if (!uri) return;
+        if (PhotoService.seenUris.has(uri)) return;
+
+        PhotoService.seenUris.add(uri);
+
+        // Persist
+        if (PhotoService.preferences) {
+            try {
+                const seenArray = Array.from(PhotoService.seenUris);
+                await PhotoService.preferences.put(PhotoService.KEY_SEEN_URIS, JSON.stringify(seenArray));
+                await PhotoService.preferences.flush();
+            } catch (err) {
+                console.error('PhotoService: Failed to save history', JSON.stringify(err));
+            }
+        }
+    }
+
+    /**
+     * Preload: Initialize the session deck in background
+     */
+    public static async preload(context: common.UIAbilityContext): Promise<void> {
+        if (PhotoService.isInitialized) {
+            console.info('PhotoService: Session already initialized.');
+            return;
+        }
+        await PhotoService.loadSession(context);
+    }
+
+    /**
+     * Consume preloaded assets - Now just returns the first batch from the deck
      */
     public static consumePreloadedAssets(): Array<photoAccessHelper.PhotoAsset> | null {
-        if (PhotoService.preloadedAssets && PhotoService.preloadedAssets.length > 0) {
-            const assets = PhotoService.preloadedAssets;
-            PhotoService.preloadedAssets = null; // Clear to release reference
-            console.info('PhotoService: Consumed preloaded assets.');
-            return assets;
+        if (PhotoService.isInitialized && PhotoService.sessionAssets.length > 0) {
+            // Check if cursor is at 0 (fresh start)
+            if (PhotoService.sessionCursor === 0) {
+                return PhotoService.getNextBatch(20);
+            }
         }
         return null;
     }
 
     /**
-     * Randomly retrieve a batch of photos.
+     * Load all assets and shuffle them into the session deck
      */
-    async getRandomAssets(count: number = 20): Promise<Array<photoAccessHelper.PhotoAsset>> {
+    public static async loadSession(context: common.UIAbilityContext): Promise<void> {
         try {
+            console.info('PhotoService: Loading session deck...');
+
+            // 1. Init Preferences
+            await PhotoService.initPreferences(context);
+
+            const phHelper = photoAccessHelper.getPhotoAccessHelper(context);
             let predicates: dataSharePredicates.DataSharePredicates = new dataSharePredicates.DataSharePredicates();
+
+            // Fetch ALL assets (no limit)
             let fetchOptions: photoAccessHelper.FetchOptions = {
                 fetchColumns: [
                     photoAccessHelper.PhotoKeys.DISPLAY_NAME,
@@ -79,41 +122,76 @@ export class PhotoService {
                 predicates: predicates
             };
 
-            const fetchResult = await this.phHelper.getAssets(fetchOptions);
+            const fetchResult = await phHelper.getAssets(fetchOptions);
             if (fetchResult === undefined) {
                 console.error('PhotoService: getAssets failed');
-                return [];
+                return;
             }
 
             const totalCount = fetchResult.getCount();
             if (totalCount === 0) {
                 fetchResult.close();
-                return [];
+                PhotoService.sessionAssets = [];
+                PhotoService.isInitialized = true;
+                return;
             }
 
-            // Generate random unique indices
-            const indices = new Set<number>();
-            const safeCount = Math.min(count, totalCount);
-            while (indices.size < safeCount) {
-                const randomIndex = Math.floor(Math.random() * totalCount);
-                indices.add(randomIndex);
-            }
-
+            // Get all objects
             const allAssets = await fetchResult.getAllObjects();
             fetchResult.close();
 
-            const selectedAssets: Array<photoAccessHelper.PhotoAsset> = [];
-            indices.forEach((index: number): void => {
-                if (allAssets[index]) {
-                    selectedAssets.push(allAssets[index]);
-                }
-            });
+            // 2. Filter out SEEN assets
+            const freshAssets = allAssets.filter(asset => !PhotoService.seenUris.has(asset.uri));
+            console.info(`PhotoService: Filtered ${allAssets.length - freshAssets.length} seen photos. Remaining: ${freshAssets.length}`);
 
-            return selectedAssets;
+            // 3. Fisher-Yates Shuffle
+            for (let i = freshAssets.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [freshAssets[i], freshAssets[j]] = [freshAssets[j], freshAssets[i]];
+            }
+
+            PhotoService.sessionAssets = freshAssets;
+            PhotoService.sessionCursor = 0;
+            PhotoService.isInitialized = true;
+            console.info(`PhotoService: Session loaded with ${freshAssets.length} assets.`);
+
         } catch (err) {
-            console.error(`PhotoService: getRandomAssets failed: ${JSON.stringify(err)}`);
+            console.error(`PhotoService: loadSession failed: ${JSON.stringify(err)}`);
+        }
+    }
+
+    /**
+     * Get next batch from the deck
+     */
+    public static getNextBatch(count: number = 20): Array<photoAccessHelper.PhotoAsset> {
+        if (!PhotoService.isInitialized) {
+            console.warn('PhotoService: Session not initialized, returning empty.');
             return [];
         }
+
+        const start = PhotoService.sessionCursor;
+        const end = Math.min(start + count, PhotoService.sessionAssets.length);
+
+        if (start >= PhotoService.sessionAssets.length) {
+            console.info('PhotoService: Session exhausted.');
+            return [];
+        }
+
+        const batch = PhotoService.sessionAssets.slice(start, end);
+        PhotoService.sessionCursor = end;
+        console.info(`PhotoService: Dealt batch ${start}-${end} (Total: ${PhotoService.sessionAssets.length})`);
+
+        return batch;
+    }
+
+    /**
+     * Legacy instance method - redirected to static
+     */
+    async getRandomAssets(count: number = 20): Promise<Array<photoAccessHelper.PhotoAsset>> {
+        if (!PhotoService.isInitialized) {
+            await PhotoService.loadSession(this.context);
+        }
+        return PhotoService.getNextBatch(count);
     }
 
     /**
