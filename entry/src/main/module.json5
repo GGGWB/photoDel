@@ -10,7 +10,7 @@
     "requestPermissions": [
       {
         "name": "ohos.permission.READ_IMAGEVIDEO",
-        "reason": "$string:app_name",
+        "reason": "$string:reason_read_image",
         "usedScene": {
           "abilities": [
             "EntryAbility"
@@ -20,7 +20,7 @@
       },
       {
         "name": "ohos.permission.WRITE_IMAGEVIDEO",
-        "reason": "$string:app_name",
+        "reason": "$string:reason_write_image",
         "usedScene": {
           "abilities": [
             "EntryAbility"

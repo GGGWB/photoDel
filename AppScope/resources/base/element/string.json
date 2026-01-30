@@ -2,7 +2,15 @@
   "string": [
     {
       "name": "app_name",
-      "value": "去留之间"
+      "value": "照片断舍离"
+    },
+    {
+      "name": "reason_read_image",
+      "value": "用于读取相册照片以进行展示和整理"
+    },
+    {
+      "name": "reason_write_image",
+      "value": "用于将确认删除的照片移动到回收站"
     }
   ]
 }
