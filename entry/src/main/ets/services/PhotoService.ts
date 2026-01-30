@@ -15,6 +15,7 @@
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { dataSharePredicates, preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
+import { image } from '@kit.ImageKit';
 
 export class PhotoService {
     private context: common.UIAbilityContext;
@@ -117,7 +118,8 @@ export class PhotoService {
                     photoAccessHelper.PhotoKeys.DATE_ADDED,
                     photoAccessHelper.PhotoKeys.URI,
                     photoAccessHelper.PhotoKeys.WIDTH,
-                    photoAccessHelper.PhotoKeys.HEIGHT
+                    photoAccessHelper.PhotoKeys.HEIGHT,
+                    photoAccessHelper.PhotoKeys.SIZE
                 ],
                 predicates: predicates
             };
@@ -268,4 +270,88 @@ export class PhotoService {
             }
         }
     }
+
+    /**
+     * Get detailed photo information including EXIF
+     */
+    public static async getPhotoDetails(context: common.UIAbilityContext, uri: string): Promise<PhotoDetails> {
+        let details: PhotoDetails = {
+            iso: '无',
+            exposureTime: '无',
+            fNumber: '无',
+            focalLength: '无',
+            dateTimeOriginal: '无',
+            latitude: '无',
+            longitude: '无'
+        };
+
+        try {
+            // Check access by trying to open open file descriptor first (optional check)
+            // But ImageSource can create from URI directly if permissions are granted.
+
+            const imageSource = image.createImageSource(uri);
+            if (!imageSource) {
+                console.warn('PhotoService: Failed to create ImageSource');
+                return details;
+            }
+
+            // Get Image Info for basic check (optional)
+            // const imageInfo = await imageSource.getImageInfo();
+
+            // Get EXIF Properties
+            // Note: Keys are strings, e.g. "H" for DateTimeOriginal? No, use PropertyKey constants.
+            // PropertyKey not directly exported as enum in some SDK versions, usually strings.
+            // Common EXIF tags:
+            // DateTimeOriginal: "DateTimeOriginal"
+            // ISOSpeedRatings: "ISOSpeedRatings"
+            // ExposureTime: "ExposureTime"
+            // FNumber: "FNumber"
+            // FocalLength: "FocalLength"
+            // GPSLatitude: "GPSLatitude"
+            // GPSLongitude: "GPSLongitude"
+
+            // Helper to get property safely
+            const getProp = async (key: string): Promise<string> => {
+                try {
+                    return await imageSource.getImageProperty(key);
+                } catch (e) {
+                    return '';
+                }
+            };
+
+            const iso = await getProp("ISOSpeedRatings");
+            const exposure = await getProp("ExposureTime");
+            const fNum = await getProp("FNumber");
+            const focal = await getProp("FocalLength");
+            const dateOrg = await getProp("DateTimeOriginal");
+            const lat = await getProp("GPSLatitude");
+            const long = await getProp("GPSLongitude");
+
+            if (iso) details.iso = iso;
+            if (exposure) details.exposureTime = exposure;
+            if (fNum) details.fNumber = fNum;
+            if (focal) details.focalLength = focal;
+            if (dateOrg) details.dateTimeOriginal = dateOrg;
+            if (lat) details.latitude = lat;
+            if (long) details.longitude = long;
+
+            imageSource.release();
+
+        } catch (err) {
+            console.error(`PhotoService: getPhotoDetails failed: ${JSON.stringify(err)}`);
+        }
+
+        return details;
+    }
 }
+
+export interface PhotoDetails {
+    iso: string;
+    exposureTime: string;
+    fNumber: string;
+    focalLength: string;
+    dateTimeOriginal: string;
+    latitude: string;
+    longitude: string;
+}
+

@@ -31,6 +31,8 @@ import { PhotoService } from '../services/PhotoService';
 import { StatsService } from '../services/StatsService';
 import { CardStack } from '../components/CardStack';
 import { StatsBar } from '../components/StatsBar';
+import { InfoDialog } from '../components/InfoDialog';
+import { PhotoDetails } from '../services/PhotoService';
 import { AppColors, AppFontSizes, AppSpacing, AppRadius } from '../common/Theme';
 
 @Entry
@@ -55,6 +57,28 @@ struct Index {
 
   private photoService: PhotoService | null = null;
   private statsService: StatsService | null = null;
+
+  // Info Dialog State
+  @State infoDisplayName: string = '';
+  @State infoDateAdded: string = '';
+  @State infoFileSize: string = '';
+  @State infoResolution: string = '';
+  @State infoFilePath: string = '';
+  @State infoLocation: string = '无';
+
+  infoDialogController: CustomDialogController = new CustomDialogController({
+    builder: InfoDialog({
+      displayName: this.infoDisplayName,
+      dateAdded: this.infoDateAdded,
+      fileSize: this.infoFileSize,
+      resolution: this.infoResolution,
+      filePath: this.infoFilePath,
+      location: this.infoLocation
+    }),
+    autoCancel: true,
+    customStyle: true,
+    alignment: DialogAlignment.Center
+  });
 
   aboutToAppear(): void {
     let context = getContext(this) as common.UIAbilityContext;
@@ -175,21 +199,42 @@ struct Index {
     }
   }
 
-  handleInfo(): void {
+  async handleInfo(): Promise<void> {
     if (this.currentIndex < this.photos.length) {
       const asset = this.photos[this.currentIndex];
-      let displayName = asset.displayName || '未知文件';
+      
+      // Basic Info
+      this.infoDisplayName = asset.displayName || '未知文件';
       let dateAdded: number = asset.get(photoAccessHelper.PhotoKeys.DATE_ADDED) as number || 0;
-      let dateStr = new Date(dateAdded * 1000).toLocaleString();
+      this.infoDateAdded = new Date(dateAdded * 1000).toLocaleString();
+      
+      const width = asset.get(photoAccessHelper.PhotoKeys.WIDTH) as number || 0;
+      const height = asset.get(photoAccessHelper.PhotoKeys.HEIGHT) as number || 0;
+      this.infoResolution = `${width} x ${height}`;
 
-      this.getUIContext().showAlertDialog({
-        title: '照片详情',
-        message: `📁 ${displayName}\n📅 ${dateStr}`,
-        confirm: {
-          value: '关闭',
-          action: (): void => {}
-        }
-      });
+      const size = asset.get(photoAccessHelper.PhotoKeys.SIZE) as number || 0;
+      this.infoFileSize = (size / (1024 * 1024)).toFixed(2) + ' MB';
+      
+      this.infoFilePath = asset.uri;
+
+      // EXIF Info (Async)
+      // Reset values first
+      this.infoLocation = '...';
+      
+      // Open dialog immediately
+      this.infoDialogController.open();
+
+      // Fetch EXIF (Location only now)
+      const context = getContext(this) as common.UIAbilityContext;
+      const details = await PhotoService.getPhotoDetails(context, asset.uri);
+      
+      // Format Location
+      if (details.latitude && details.latitude !== '无' && details.longitude && details.longitude !== '无') {
+          // Simple formatting
+          this.infoLocation = `${details.latitude}, ${details.longitude}`;
+      } else {
+          this.infoLocation = '无';
+      }
     }
   }
 

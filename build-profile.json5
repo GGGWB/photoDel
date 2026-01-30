@@ -7,11 +7,11 @@
         "material": {
           "certpath": "/Users/gggwb/.ohos/config/default_photoDel_qDCXiu4rQAh2YHX_wo_MjXCsjxzAMAgjbTFBAJtfNkc=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B4DE5A67333E3580382B85174E866704010F55E0D80E22BB0E71CE67EFEAA930B535877BE3FB9E5",
+          "keyPassword": "0000001B4F13F25FA3A1BEF8E6C295457793C3F4166893FCE31E9325A94D8E0CA3066FECB0559174FD53B1",
           "profile": "/Users/gggwb/.ohos/config/default_photoDel_qDCXiu4rQAh2YHX_wo_MjXCsjxzAMAgjbTFBAJtfNkc=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/Users/gggwb/.ohos/config/default_photoDel_qDCXiu4rQAh2YHX_wo_MjXCsjxzAMAgjbTFBAJtfNkc=.p12",
-          "storePassword": "0000001B3F08B36E43ECBEA06C27C395CF3D60E9D33003B0139C87BB4B1CE5711A5CC002CA6AD16F1BFD9E"
+          "storePassword": "0000001B9BE454061861C37D3E933AA1A0C08964FEE934A0F0F264A72B664CB1E54555D91A47BD994202D0"
         }
       }
     ],
