@@ -16,9 +16,16 @@
  * - 图标极简纯白化 (White & Minimalist Icons)。
  * - 移除了设置图标的外圆装饰。
  * - 统一了所有功能图标的颜色为白色文本色 (TEXT_PRIMARY)。
+ * 
+ * v3.1 更新：
+ * - 新增设置页面 (SettingsPage): 提供数据重置与历史清除功能。
+ * - 视觉焕新: 替换了菜单、返回及风险提示图标，优化了布局对齐与间距。
+ * - 状态同步: 实现了主页与设置页的数据实时联动，支持“后悔药”机制（重置保留后自动刷新）。
  */
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
+import { router, promptAction } from '@kit.ArkUI';
+
 
 import { PhotoService } from '../services/PhotoService';
 import { StatsService } from '../services/StatsService';
@@ -56,6 +63,33 @@ struct Index {
 
     this.loadPhotos(); // Load photos immediately (parallel)
     this.initStats();
+  }
+
+  async onPageShow(): Promise<void> {
+    if (this.statsService) {
+       const savedKept = await this.statsService.getTotalKept();
+       const savedDeleted = await this.statsService.getTotalDeleted();
+
+       // Detect Reset: If local values are greater than saved values, a reset happened.
+       if (this.totalKept > 0 && savedKept === 0) {
+           // History was cleared, we must reload photos to include previously kept ones
+           this.totalKept = 0;
+           this.photos = []; 
+           this.albumTotal = await this.photoService?.getAlbumCount() || 0;
+           await this.loadPhotos();
+           promptAction.showToast({ message: '相册列表已刷新', duration: 1000 });
+       }
+       
+       if (this.totalDeleted > 0 && savedDeleted === 0) {
+           this.totalDeleted = 0;
+           this.removedCount = 0; // Optional: reset current session removed count too?
+       }
+
+       // Sync perfectly
+       this.totalKept = savedKept;
+       this.totalDeleted = savedDeleted;
+       this.totalProcessed = await this.statsService.getTotalProcessed();
+    }
   }
 
   async initStats(): Promise<void> {
@@ -178,52 +212,38 @@ struct Index {
       // 底层内容
       Column() {
         // 顶部导航栏
-        Stack({ alignContent: Alignment.Center }) {
+        // 顶部导航栏
+        Row() {
           // 左侧进度
-          Row() {
-            Stack() {
-              Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
-                .width(40)
-                .height(40)
-                .style({ strokeWidth: 3 })
-                .color(AppColors.ACCENT_KEEP) // Changed to Green
-                .backgroundColor(AppColors.BG_TERTIARY)
+          Stack() {
+            Progress({ value: this.currentIndex, total: Math.max(this.photos.length, 1), type: ProgressType.Ring })
+              .width(40)
+              .height(40)
+              .style({ strokeWidth: 3 })
+              .color(AppColors.ACCENT_KEEP)
+              .backgroundColor(AppColors.BG_TERTIARY)
 
-              Text(`${this.currentIndex}`)
-                .fontSize(14)
-                .fontColor(AppColors.TEXT_PRIMARY)
-                .fontWeight(FontWeight.Bold)
-            }
+            Text(`${this.currentIndex}`)
+              .fontSize(14)
+              .fontColor(AppColors.TEXT_PRIMARY)
+              .fontWeight(FontWeight.Bold)
           }
-          .width('100%')
-          .justifyContent(FlexAlign.Start)
 
           // 右侧设置菜单
-          Row() {
-            Stack() {
-
-
-              // 汉堡菜单图标 (三道杠)
-              Column({ space: 3 }) { //稍微减小间距以匹配更小的图标
-                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
-                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
-                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
-              }
-              .justifyContent(FlexAlign.Center)
-              .width(36)
-              .height(36)
-              .justifyContent(FlexAlign.Center)
-            }
-            .onClick((): void => {
-              this.getUIContext().showAlertDialog({ title: '设置', message: '更多功能敬请期待', confirm: { value: '好', action: ()=>{} } })
-            })
+          Stack() {
+            Image($r('app.media.ic_menu'))
+              .width(22)
+              .height(22)
+              .fillColor(AppColors.TEXT_PRIMARY)
           }
-          .width('100%')
-          .justifyContent(FlexAlign.End)
-
-          // 中间标题 removed as per user request
+          .onClick((): void => {
+            router.pushUrl({ url: 'pages/SettingsPage' });
+          })
+          .padding({ right: 4 }) // Keep original padding if needed, or remove if alignment requires it. Keeping it.
         }
         .width('100%')
+        .justifyContent(FlexAlign.SpaceBetween)
+        .alignItems(VerticalAlign.Center) // Critical for center alignment
         .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD })
 
         // 主内容区

@@ -82,4 +82,16 @@ export class StatsService {
             console.error('addProcessed failed:', JSON.stringify(err));
         }
     }
+
+    async resetDeleted(): Promise<void> {
+        if (!this.dataPreferences) return;
+        await this.dataPreferences.put(KEY_TOTAL_DELETED, 0);
+        await this.dataPreferences.flush();
+    }
+
+    async resetKept(): Promise<void> {
+        if (!this.dataPreferences) return;
+        await this.dataPreferences.put(KEY_TOTAL_KEPT, 0);
+        await this.dataPreferences.flush();
+    }
 }

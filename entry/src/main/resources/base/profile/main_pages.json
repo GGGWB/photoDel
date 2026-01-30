@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/IntroPage",
-    "pages/Index"
+    "pages/Index",
+    "pages/SettingsPage"
   ]
 }

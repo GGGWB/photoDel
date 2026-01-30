@@ -202,6 +202,9 @@ export class PhotoService {
     /**
      * Mark asset for deletion (queue it)
      */
+    /**
+     * Mark asset for deletion (queue it)
+     */
     async moveToTrash(asset: photoAccessHelper.PhotoAsset): Promise<void> {
         this.pendingTrash.push(asset);
         // Optimistic return, no actual deletion yet
@@ -219,8 +222,6 @@ export class PhotoService {
             this.pendingTrash = []; // Clear queue on success
         } catch (err) {
             console.error(`PhotoService: commitDeletions failed: ${JSON.stringify(err)}`);
-            // Queue remains if failed, so we don't lose them? 
-            // Better to clear or handle retry. For MVP, we clear to avoid repeating error loops.
             this.pendingTrash = [];
         }
     }
@@ -249,13 +250,22 @@ export class PhotoService {
     }
 
     /**
-     * Get assets from trash - simplified version
-     * Note: System trash access may require elevated permissions
-     * For now, return empty and guide user to system Photos app
+     * Clear all history (Reset Seen Status)
      */
-    /**
-     * Get assets from System Trash
-     */
-    // Trash features removed as per user request (v2.7)
+    public static async clearHistory(context: common.UIAbilityContext): Promise<void> {
+        PhotoService.seenUris.clear();
+        PhotoService.isInitialized = false; // Force reload session
+        PhotoService.sessionAssets = [];
+        PhotoService.sessionCursor = 0;
 
+        if (PhotoService.preferences) {
+            try {
+                await PhotoService.preferences.put(PhotoService.KEY_SEEN_URIS, '[]');
+                await PhotoService.preferences.flush();
+                console.info('PhotoService: History cleared.');
+            } catch (err) {
+                console.error('PhotoService: clearHistory failed', JSON.stringify(err));
+            }
+        }
+    }
 }
