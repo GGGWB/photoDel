@@ -1,3 +1,14 @@
+/**
+ * StatsBar.ets
+ * 
+ * 底部统计栏组件
+ * 显示相册总数、已处理、保留、删除等实时统计数据。
+ * 提供进入“回收站”页面的入口。
+ * 
+ * v2.5 更新：
+ * - 图标更新：更换了更简约的白色垃圾桶图标，并去除了背景底色，
+ *   使视觉风格与暗黑玻璃主题更加统一。
+ */
 import { AppColors, AppFontSizes, AppSpacing, AppRadius } from '../common/Theme';
 import { router } from '@kit.ArkUI';
 
@@ -69,8 +80,10 @@ export struct StatsBar {
 
         // 回收站按钮
         Column() {
-          Text('🗑️')
-            .fontSize(16)
+          Image($r('app.media.ic_trash_custom'))
+            .width(24)
+            .height(24)
+            .fillColor(AppColors.TEXT_PRIMARY)
         }
         .width(32)
         .height(32)

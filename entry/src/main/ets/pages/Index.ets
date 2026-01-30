@@ -11,6 +11,11 @@
  * - 优化了全屏预览的稳定性 (Crash Fix & Debounce)。
  * - 调整了顶部图标的样式与布局 (UI Polish)。
  * - 实现了智能图片适配策略 (Smart ObjectFit)。
+ * 
+ * v2.5 更新：
+ * - 图标极简纯白化 (White & Minimalist Icons)。
+ * - 移除了设置图标的外圆装饰。
+ * - 统一了所有功能图标的颜色为白色文本色 (TEXT_PRIMARY)。
  */
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { common } from '@kit.AbilityKit';
@@ -185,19 +190,17 @@ struct Index {
           // 右侧设置菜单
           Row() {
             Stack() {
-              Progress({ value: 1, total: 1, type: ProgressType.Ring })
-                .width(36)
-                .height(36)
-                .style({ strokeWidth: 2 }) // 更细的圆圈
-                .color(AppColors.ACCENT_PRIMARY)
-                .backgroundColor(AppColors.BG_TERTIARY)
+
 
               // 汉堡菜单图标 (三道杠)
               Column({ space: 3 }) { //稍微减小间距以匹配更小的图标
-                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
-                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
-                Rect().width(12).height(2).fill(AppColors.ACCENT_PRIMARY).radius(2)
+                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
+                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
+                Rect().width(12).height(2).fill(AppColors.TEXT_PRIMARY).radius(2)
               }
+              .justifyContent(FlexAlign.Center)
+              .width(36)
+              .height(36)
               .justifyContent(FlexAlign.Center)
             }
             .onClick((): void => {
