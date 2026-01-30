@@ -54,6 +54,7 @@ struct Index {
     this.photoService = new PhotoService(context);
     this.statsService = new StatsService(context);
 
+    this.loadPhotos(); // Load photos immediately (parallel)
     this.initStats();
   }
 
@@ -69,21 +70,28 @@ struct Index {
     if (this.photoService) {
       this.albumTotal = await this.photoService.getAlbumCount();
     }
-
-    setTimeout((): void => {
-      this.loadPhotos();
-    }, 300);
   }
 
   async loadPhotos(): Promise<void> {
-    this.isLoading = true;
     this.removedCount = 0;
+    if (this.photoService) {
+      // 优先使用预加载的资源
+      const preloaded = PhotoService.consumePreloadedAssets();
+      if (preloaded && preloaded.length > 0) {
+          this.photos = preloaded;
+          this.currentIndex = 0;
+          this.isLoading = false;
+          console.info('Index: Used preloaded photos instantly');
+          return;
+      }
+    }
+
+    // 没有预加载数据，才显示加载状态并获取
+    this.isLoading = true;
     if (this.photoService) {
       const assets = await this.photoService.getRandomAssets(20);
       this.photos = assets;
       this.currentIndex = 0;
-
-      // 不再预先增加已处理数，改为操作时增加
     }
     this.isLoading = false;
   }
@@ -173,7 +181,7 @@ struct Index {
                 .width(40)
                 .height(40)
                 .style({ strokeWidth: 3 })
-                .color(AppColors.ACCENT_PRIMARY)
+                .color(AppColors.ACCENT_KEEP) // Changed to Green
                 .backgroundColor(AppColors.BG_TERTIARY)
 
               Text(`${this.currentIndex}`)
@@ -208,11 +216,7 @@ struct Index {
           .width('100%')
           .justifyContent(FlexAlign.End)
 
-          // 中间标题
-          Text('去留之间')
-            .fontSize(AppFontSizes.SUBTITLE)
-            .fontColor(AppColors.ACCENT_INFO)
-            .fontWeight(FontWeight.Bold)
+          // 中间标题 removed as per user request
         }
         .width('100%')
         .padding({ left: AppSpacing.LG, right: AppSpacing.LG, top: 10, bottom: AppSpacing.MD })
@@ -276,32 +280,32 @@ struct Index {
               .backgroundColor(AppColors.GLASS_BG)
               .borderRadius(AppRadius.FULL)
 
-              // 按钮组
+              // 按钮组 (Monochrome Clean Style)
               Row({ space: AppSpacing.LG }) {
+                // Primary Action: White Solid
                 Button('再来20张')
                   .layoutWeight(1)
                   .height(48)
                   .borderRadius(AppRadius.FULL)
-                  .backgroundColor(AppColors.GLASS_BG)
-                  .backgroundBlurStyle(BlurStyle.Regular)
-                  .border({ width: 1, color: AppColors.ACCENT_PRIMARY })
+                  .backgroundColor(Color.White) // Solid White
                   .fontSize(16)
-                  .fontColor(AppColors.ACCENT_PRIMARY)
+                  .fontColor(Color.Black) // Dark Text
                   .fontWeight(FontWeight.Bold)
                   .onClick((): void => {
                     this.loadPhotos();
                   })
 
+                // Secondary Action: Glass Outline
                 Button('退出')
                   .layoutWeight(1)
                   .height(48)
                   .borderRadius(AppRadius.FULL)
                   .backgroundColor(AppColors.GLASS_BG)
                   .backgroundBlurStyle(BlurStyle.Regular)
-                  .border({ width: 1, color: AppColors.ACCENT_DELETE })
+                  .border({ width: 1, color: 'rgba(255,255,255,0.3)' }) // Subtle White Border
                   .fontSize(16)
-                  .fontColor(AppColors.ACCENT_DELETE)
-                  .fontWeight(FontWeight.Bold)
+                  .fontColor(Color.White) // White Text
+                  .fontWeight(FontWeight.Medium)
                   .onClick((): void => {
                     const context = getContext(this) as common.UIAbilityContext;
                     context.terminateSelf();

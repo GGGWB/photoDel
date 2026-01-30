@@ -20,9 +20,46 @@ export class PhotoService {
     private context: common.UIAbilityContext;
     private phHelper: photoAccessHelper.PhotoAccessHelper;
 
+    // Static storage for preloading
+    private static preloadedAssets: Array<photoAccessHelper.PhotoAsset> | null = null;
+
     constructor(context: common.UIAbilityContext) {
         this.context = context;
         this.phHelper = photoAccessHelper.getPhotoAccessHelper(context);
+    }
+
+    /**
+     * Preload assets into static memory
+     */
+    public static async preload(context: common.UIAbilityContext): Promise<void> {
+        if (PhotoService.preloadedAssets && PhotoService.preloadedAssets.length > 0) {
+            console.info('PhotoService: Already preloaded.');
+            return;
+        }
+        try {
+            console.info('PhotoService: Starting preload...');
+            const service = new PhotoService(context);
+            // Fetch more than usual (e.g. 50) to ensure smooth start
+            const assets = await service.getRandomAssets(40);
+            PhotoService.preloadedAssets = assets;
+            console.info(`PhotoService: Preloaded ${assets.length} assets.`);
+        } catch (err) {
+            console.error(`PhotoService: Preload failed: ${JSON.stringify(err)}`);
+        }
+    }
+
+    /**
+     * Consume preloaded assets. Returns null if none available.
+     * Clears storage after consumption.
+     */
+    public static consumePreloadedAssets(): Array<photoAccessHelper.PhotoAsset> | null {
+        if (PhotoService.preloadedAssets && PhotoService.preloadedAssets.length > 0) {
+            const assets = PhotoService.preloadedAssets;
+            PhotoService.preloadedAssets = null; // Clear to release reference
+            console.info('PhotoService: Consumed preloaded assets.');
+            return assets;
+        }
+        return null;
     }
 
     /**

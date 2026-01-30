@@ -26,7 +26,7 @@ export struct StatsBar {
         Column() {
           Text(`${this.albumTotal}`)
             .fontSize(AppFontSizes.SUBTITLE)
-            .fontColor(AppColors.ACCENT_INFO)
+            .fontColor(AppColors.TEXT_PRIMARY) // Changed to White
             .fontWeight(FontWeight.Bold)
           Text('相册')
             .fontSize(AppFontSizes.SMALL)
