@@ -83,11 +83,7 @@ struct Index {
       this.photos = assets;
       this.currentIndex = 0;
 
-      // 更新已处理总数
-      if (this.statsService && assets.length > 0) {
-        await this.statsService.addProcessed(assets.length);
-        this.totalProcessed = await this.statsService.getTotalProcessed();
-      }
+      // 不再预先增加已处理数，改为操作时增加
     }
     this.isLoading = false;
   }
@@ -99,6 +95,7 @@ struct Index {
         await this.photoService.moveToTrash(asset);
         this.removedCount++;
         this.totalDeleted++;
+        this.totalProcessed++; // 增加已处理数
         this.albumTotal--;
 
         if (this.statsService) {
@@ -115,6 +112,7 @@ struct Index {
   async handleKeep(): Promise<void> {
     if (this.currentIndex < this.photos.length) {
       this.totalKept++;
+      this.totalProcessed++; // 增加已处理数
       this.currentIndex++;
 
       if (this.statsService) {

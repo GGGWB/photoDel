@@ -26,12 +26,10 @@ export class StatsService {
     }
 
     async getTotalProcessed(): Promise<number> {
-        if (!this.dataPreferences) return 0;
-        try {
-            return await this.dataPreferences.get(KEY_TOTAL_PROCESSED, 0) as number;
-        } catch (err) {
-            return 0;
-        }
+        // 已处理数 = 保留数 + 删除数 (确保数据绝对一致)
+        let kept = await this.getTotalKept();
+        let deleted = await this.getTotalDeleted();
+        return kept + deleted;
     }
 
     async getTotalKept(): Promise<number> {

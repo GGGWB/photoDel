@@ -78,21 +78,7 @@ export struct StatsBar {
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Center)
 
-        // 回收站按钮
-        Column() {
-          Image($r('app.media.ic_trash_custom'))
-            .width(24)
-            .height(24)
-            .fillColor(AppColors.TEXT_PRIMARY)
-        }
-        .width(32)
-        .height(32)
-        .borderRadius(AppRadius.SM)
-        // Removed background color as requested
-        .justifyContent(FlexAlign.Center)
-        .onClick((): void => {
-          router.pushUrl({ url: 'pages/TrashPage' });
-        })
+        // Removed Trash Button as per user request
       }
       .padding({ left: AppSpacing.SM, right: AppSpacing.MD, top: AppSpacing.SM, bottom: AppSpacing.SM })
     }
