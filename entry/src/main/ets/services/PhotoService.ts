@@ -138,18 +138,9 @@ export class PhotoService {
      * Note: System trash access may require elevated permissions
      * For now, return empty and guide user to system Photos app
      */
-    async getTrashAssets(): Promise<Array<photoAccessHelper.PhotoAsset>> {
-        // Accessing system trash requires special permissions
-        // Return empty array - user should check system Photos app
-        console.info('PhotoService: Trash access requires system Photos app');
-        return [];
-    }
-
     /**
-     * Recover asset - Guide user to system album
+     * Get assets from System Trash
      */
-    async recoverAsset(asset: photoAccessHelper.PhotoAsset): Promise<void> {
-        // Recovery from trash requires system UI
-        console.info('PhotoService: Please recover from system Photos app');
-    }
+    // Trash features removed as per user request (v2.7)
+
 }
